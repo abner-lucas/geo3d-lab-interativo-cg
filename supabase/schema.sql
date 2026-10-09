@@ -141,11 +141,70 @@ CREATE POLICY "Respostas registradas por tentativa"
 -- ==============================================================================
 -- DADOS INICIAIS DE DEMONSTRAÇÃO (SEED)
 -- ==============================================================================
-INSERT INTO assessments (code, title, description, max_score, is_active)
+INSERT INTO assessments (id, code, title, description, max_score, is_active)
 VALUES (
+    'a0000000-0000-0000-0000-000000000001',
     'GEO-3AVAL-2026', 
     '3ª Avaliação de Computação Gráfica — 2D, Planificações e Sólidos 3D', 
     'Avaliação interativa e acessível com 10 questões práticas.', 
     10.00, 
     true
 ) ON CONFLICT (code) DO NOTHING;
+
+-- Professor Padrão
+INSERT INTO teachers (id, name, email, role)
+VALUES (
+    't0000000-0000-0000-0000-000000000001',
+    'Prof. Marcos Rocha',
+    'prof@geo3d.edu.br',
+    'teacher'
+) ON CONFLICT (email) DO NOTHING;
+
+-- Turma Padrão
+INSERT INTO classes (id, teacher_id, code, name, year_period, is_assessment_active)
+VALUES (
+    'c0000000-0000-0000-0000-000000000001',
+    't0000000-0000-0000-0000-000000000001',
+    'TURMA-INFO3',
+    '3º Ano Informática Integrado - Manhã',
+    '2026.1',
+    true
+) ON CONFLICT (code) DO NOTHING;
+
+-- Estudantes Iniciais
+INSERT INTO students (id, class_id, pseudonym, display_number, access_code, notes)
+VALUES 
+(
+    's0000000-0000-0000-0000-000000000001',
+    'c0000000-0000-0000-0000-000000000001',
+    'Estudante 01 (Luiza)',
+    1,
+    'GEO-ALUNA-01',
+    'Estudante com preferência por instruções visuais diretas e animações de dobradura.'
+),
+(
+    's0000000-0000-0000-0000-000000000002',
+    'c0000000-0000-0000-0000-000000000001',
+    'Estudante 02 (Gabriel)',
+    2,
+    'GEO-ALUNO-02',
+    'Boa percepção espacial, explorou os sólidos no laboratório prévio.'
+),
+(
+    's0000000-0000-0000-0000-000000000003',
+    'c0000000-0000-0000-0000-000000000001',
+    'Estudante 03 (Sofia)',
+    3,
+    'GEO-ALUNA-03',
+    ''
+),
+(
+    's0000000-0000-0000-0000-000000000004',
+    'c0000000-0000-0000-0000-000000000001',
+    'Estudante 04 (Lucas)',
+    4,
+    'GEO-ALUNO-04',
+    ''
+)
+ON CONFLICT (access_code) DO NOTHING;
+
