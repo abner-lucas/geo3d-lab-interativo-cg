@@ -154,7 +154,7 @@ VALUES (
 -- Professor Padrão
 INSERT INTO teachers (id, name, email, role)
 VALUES (
-    't0000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
     'Prof. Marcos Rocha',
     'prof@geo3d.edu.br',
     'teacher'
@@ -163,8 +163,8 @@ VALUES (
 -- Turma Padrão
 INSERT INTO classes (id, teacher_id, code, name, year_period, is_assessment_active)
 VALUES (
-    'c0000000-0000-0000-0000-000000000001',
-    't0000000-0000-0000-0000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
     'TURMA-INFO3',
     '3º Ano Informática Integrado - Manhã',
     '2026.1',
@@ -175,32 +175,32 @@ VALUES (
 INSERT INTO students (id, class_id, pseudonym, display_number, access_code, notes)
 VALUES 
 (
-    's0000000-0000-0000-0000-000000000001',
-    'c0000000-0000-0000-0000-000000000001',
+    '30000000-0000-0000-0000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
     'Estudante 01 (Luiza)',
     1,
     'GEO-ALUNA-01',
     'Estudante com preferência por instruções visuais diretas e animações de dobradura.'
 ),
 (
-    's0000000-0000-0000-0000-000000000002',
-    'c0000000-0000-0000-0000-000000000001',
+    '30000000-0000-0000-0000-000000000002',
+    '20000000-0000-0000-0000-000000000001',
     'Estudante 02 (Gabriel)',
     2,
     'GEO-ALUNO-02',
     'Boa percepção espacial, explorou os sólidos no laboratório prévio.'
 ),
 (
-    's0000000-0000-0000-0000-000000000003',
-    'c0000000-0000-0000-0000-000000000001',
+    '30000000-0000-0000-0000-000000000003',
+    '20000000-0000-0000-0000-000000000001',
     'Estudante 03 (Sofia)',
     3,
     'GEO-ALUNA-03',
     ''
 ),
 (
-    's0000000-0000-0000-0000-000000000004',
-    'c0000000-0000-0000-0000-000000000001',
+    '30000000-0000-0000-0000-000000000004',
+    '20000000-0000-0000-0000-000000000001',
     'Estudante 04 (Lucas)',
     4,
     'GEO-ALUNO-04',
