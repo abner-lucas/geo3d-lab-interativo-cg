@@ -1,6 +1,6 @@
 {
-  "name": "Atividade: Criação de Site com Modelos 3D",
-  "description": "Roteiro e guia didático para estudantes desenvolverem e publicarem o site Mundo 3D com modelos criados no Tinkercad.",
+  "name": "Geo3D — Laboratório Interativo de Computação Gráfica",
+  "description": "Plataforma acessível de avaliação e exploração geométrica 3D, planificações e sólidos para Computação Gráfica.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
