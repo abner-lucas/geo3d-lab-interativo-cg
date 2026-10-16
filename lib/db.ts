@@ -626,6 +626,109 @@ export async function updateStudentNotes(studentId: string, notes: string): Prom
   return false;
 }
 
+export interface UpdateStudentInput {
+  pseudonym?: string;
+  accessCode?: string;
+  displayNumber?: number;
+  notes?: string;
+}
+
+export async function updateStudent(studentId: string, data: UpdateStudentInput): Promise<Student> {
+  const updatePayload: Record<string, any> = {};
+  if (data.pseudonym !== undefined) updatePayload.pseudonym = data.pseudonym.trim();
+  if (data.accessCode !== undefined) updatePayload.access_code = data.accessCode.trim().toUpperCase();
+  if (data.displayNumber !== undefined) updatePayload.display_number = Number(data.displayNumber);
+  if (data.notes !== undefined) updatePayload.notes = data.notes;
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data: updated, error } = await supabase
+        .from('students')
+        .update(updatePayload)
+        .eq('id', studentId)
+        .select()
+        .single();
+
+      if (!error && updated) {
+        const mapped = mapStudentFromDb(updated);
+        const idx = studentsDb.findIndex(s => s.id === studentId);
+        if (idx !== -1) {
+          studentsDb[idx] = mapped;
+        }
+        Object.values(attemptsDb).forEach(att => {
+          if (att.studentId === studentId) {
+            if (mapped.pseudonym) att.studentPseudonym = mapped.pseudonym;
+            if (mapped.accessCode) att.studentCode = mapped.accessCode;
+          }
+        });
+        return mapped;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  // Fallback in-memory
+  const student = studentsDb.find(s => s.id === studentId);
+  if (!student) throw new Error('Estudante não encontrado');
+
+  if (data.pseudonym !== undefined) student.pseudonym = data.pseudonym.trim();
+  if (data.accessCode !== undefined) student.accessCode = data.accessCode.trim().toUpperCase();
+  if (data.displayNumber !== undefined) student.displayNumber = Number(data.displayNumber);
+  if (data.notes !== undefined) student.notes = data.notes;
+
+  Object.values(attemptsDb).forEach(att => {
+    if (att.studentId === studentId) {
+      if (student.pseudonym) att.studentPseudonym = student.pseudonym;
+      if (student.accessCode) att.studentCode = student.accessCode;
+    }
+  });
+
+  return student;
+}
+
+export async function deleteStudent(studentId: string): Promise<boolean> {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      // 1. Deletar registros de auditoria vinculados ao estudante
+      await supabase.from('audit_logs').delete().eq('student_id', studentId);
+
+      // 2. Deletar respostas de tentativas do estudante (caso o cascade do schema não esteja ativo no banco remoto)
+      const { data: studentAttempts } = await supabase
+        .from('attempts')
+        .select('id')
+        .eq('student_id', studentId);
+
+      if (studentAttempts && studentAttempts.length > 0) {
+        const attemptIds = studentAttempts.map((a: any) => a.id);
+        await supabase.from('responses').delete().in('attempt_id', attemptIds);
+      }
+
+      // 3. Deletar tentativas do estudante
+      await supabase.from('attempts').delete().eq('student_id', studentId);
+
+      // 4. Deletar estudante
+      const { error } = await supabase.from('students').delete().eq('id', studentId);
+      if (error) {
+        console.error('Erro ao deletar estudante no Supabase:', error);
+      }
+    } catch (err) {
+      console.error('Exceção ao deletar estudante no Supabase:', err);
+    }
+  }
+
+  // Fallback in-memory: remove student, audit logs and all attempts
+  studentsDb = studentsDb.filter(s => s.id !== studentId);
+  auditLogsDb = auditLogsDb.filter(a => a.studentId !== studentId);
+  Object.keys(attemptsDb).forEach(key => {
+    if (attemptsDb[key].studentId === studentId) {
+      delete attemptsDb[key];
+    }
+  });
+
+  return true;
+}
+
 export async function adjustAttemptScore(
   attemptId: string, 
   teacherId: string, 

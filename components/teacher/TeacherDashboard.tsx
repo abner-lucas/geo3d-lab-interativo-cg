@@ -21,7 +21,9 @@ import {
   Check, 
   RefreshCw, 
   ShieldAlert,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  Pencil
 } from 'lucide-react';
 
 interface TeacherDashboardProps {
@@ -45,6 +47,19 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
   const [showAdjustmentModal, setShowAdjustmentModal] = useState<boolean>(false);
   const [adjustedScoreInput, setAdjustedScoreInput] = useState<string>('');
   const [adjustmentReason, setAdjustmentReason] = useState<string>('');
+
+  // Modals for edit student and delete student
+  const [showEditStudentModal, setShowEditStudentModal] = useState<boolean>(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editPseudonym, setEditPseudonym] = useState<string>('');
+  const [editAccessCode, setEditAccessCode] = useState<string>('');
+  const [editDisplayNumber, setEditDisplayNumber] = useState<number>(1);
+  const [editNotes, setEditNotes] = useState<string>('');
+  const [isUpdatingStudent, setIsUpdatingStudent] = useState<boolean>(false);
+
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [isDeletingStudent, setIsDeletingStudent] = useState<boolean>(false);
 
   // Modals for new class and new student
   const [showNewClassModal, setShowNewClassModal] = useState<boolean>(false);
@@ -239,6 +254,122 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
         setNewStudentPseudonym('');
       }
     } catch {}
+  };
+
+  // Open edit student modal
+  const handleOpenEditStudent = (student: Student) => {
+    setEditingStudent(student);
+    setEditPseudonym(student.pseudonym);
+    setEditAccessCode(student.accessCode);
+    setEditDisplayNumber(student.displayNumber || 1);
+    setEditNotes(student.notes || '');
+    setShowEditStudentModal(true);
+  };
+
+  // Open delete student confirmation modal
+  const handleOpenDeleteStudent = (student: Student) => {
+    setStudentToDelete(student);
+    setShowDeleteModal(true);
+  };
+
+  // Save student edit
+  const handleSaveStudentEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStudent || !editPseudonym.trim() || !editAccessCode.trim()) return;
+
+    try {
+      setIsUpdatingStudent(true);
+      const res = await fetch('/api/teacher/students', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: editingStudent.id,
+          pseudonym: editPseudonym.trim(),
+          accessCode: editAccessCode.trim(),
+          displayNumber: editDisplayNumber,
+          notes: editNotes
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const updatedStudent: Student = data.student;
+
+        // Atualizar lista de estudantes
+        setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+
+        // Atualizar tentativas com o novo pseudônimo/código
+        setAttempts(prev => prev.map(a => {
+          if (a.studentId === updatedStudent.id) {
+            return {
+              ...a,
+              studentPseudonym: updatedStudent.pseudonym,
+              studentCode: updatedStudent.accessCode
+            };
+          }
+          return a;
+        }));
+
+        // Atualizar estudante selecionado se for o mesmo
+        if (selectedStudent?.id === updatedStudent.id) {
+          setSelectedStudent(updatedStudent);
+          setPedagogicalNotes(updatedStudent.notes || '');
+          if (studentAttempt) {
+            setStudentAttempt(prev => prev ? {
+              ...prev,
+              studentPseudonym: updatedStudent.pseudonym,
+              studentCode: updatedStudent.accessCode
+            } : null);
+          }
+        }
+
+        setShowEditStudentModal(false);
+        setEditingStudent(null);
+      } else {
+        const errData = await res.json();
+        alert(`Erro ao editar estudante: ${errData.error || 'Erro desconhecido'}`);
+      }
+    } catch (err: any) {
+      alert(`Falha na comunicação: ${err.message}`);
+    } finally {
+      setIsUpdatingStudent(false);
+    }
+  };
+
+  // Confirm delete student and all relations
+  const handleConfirmDeleteStudent = async () => {
+    if (!studentToDelete) return;
+
+    try {
+      setIsDeletingStudent(true);
+      const res = await fetch(`/api/teacher/students?studentId=${studentToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        // Remover da lista de estudantes
+        setStudents(prev => prev.filter(s => s.id !== studentToDelete.id));
+
+        // Remover todas as tentativas do estudante
+        setAttempts(prev => prev.filter(a => a.studentId !== studentToDelete.id));
+
+        // Se o estudante deletado era o selecionado no drilldown, fechar a visualização
+        if (selectedStudent?.id === studentToDelete.id) {
+          setSelectedStudent(null);
+          setStudentAttempt(null);
+        }
+
+        setShowDeleteModal(false);
+        setStudentToDelete(null);
+      } else {
+        const errData = await res.json();
+        alert(`Erro ao excluir estudante: ${errData.error || 'Erro desconhecido'}`);
+      }
+    } catch (err: any) {
+      alert(`Falha na comunicação: ${err.message}`);
+    } finally {
+      setIsDeletingStudent(false);
+    }
   };
 
   // Export CSV
@@ -508,7 +639,7 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                   <th className="py-2.5 font-bold">Código</th>
                   <th className="py-2.5 font-bold">Progresso</th>
                   <th className="py-2.5 font-bold text-center">Nota</th>
-                  <th className="py-2.5 font-bold text-right">Ação</th>
+                  <th className="py-2.5 font-bold text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -560,7 +691,31 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                         )}
                       </td>
                       <td className="py-3 text-right">
-                        <ChevronRight className="w-4 h-4 text-slate-400 inline" />
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditStudent(student);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                            title="Editar dados do estudante"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDeleteStudent(student);
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                            title="Excluir estudante e histórico"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <ChevronRight className="w-4 h-4 text-slate-300 ml-0.5" />
+                        </div>
                       </td>
                     </tr>
                   );
@@ -596,6 +751,28 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                       : '--'}
                   </span>
                 </div>
+              </div>
+
+              {/* Student Management Actions */}
+              <div className="flex items-center gap-2 pt-1 pb-1">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditStudent(selectedStudent)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 text-blue-700 text-xs font-bold transition shadow-xs"
+                  title="Editar dados e código do estudante"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Editar Estudante</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOpenDeleteStudent(selectedStudent)}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-rose-200 bg-rose-50/70 hover:bg-rose-100/80 text-rose-700 text-xs font-bold transition shadow-xs"
+                  title="Excluir estudante e todas as relações associadas"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Excluir</span>
+                </button>
               </div>
 
               {/* Adjust Grade Button */}
@@ -863,6 +1040,180 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* EDIT STUDENT MODAL */}
+      {/* ------------------------------------------------------------------- */}
+      {showEditStudentModal && editingStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <form onSubmit={handleSaveStudentEdit} className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">
+                  Editar Dados do Estudante
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Atualize identificadores, código de acesso e notas pedagógicas
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Pseudônimo ou Identificador (LGPD)
+              </label>
+              <input
+                type="text"
+                required
+                value={editPseudonym}
+                onChange={(e) => setEditPseudonym(e.target.value)}
+                placeholder="Ex: Estudante 01 (Luiza)"
+                className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-600 outline-hidden"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Código de Acesso
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editAccessCode}
+                  onChange={(e) => setEditAccessCode(e.target.value.toUpperCase())}
+                  placeholder="Ex: GEO-01-2026"
+                  className="w-full p-3 rounded-xl border border-slate-200 font-mono text-xs font-bold text-blue-700 focus:border-blue-600 outline-hidden uppercase"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Nº de Ordem
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editDisplayNumber}
+                  onChange={(e) => setEditDisplayNumber(parseInt(e.target.value) || 1)}
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-600 outline-hidden"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                Observações Pedagógicas
+              </label>
+              <textarea
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Observações pedagógicas, necessidades de acessibilidade, mediações, etc."
+                rows={3}
+                className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 resize-none outline-hidden focus:border-blue-600"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditStudentModal(false);
+                  setEditingStudent(null);
+                }}
+                disabled={isUpdatingStudent}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-100 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isUpdatingStudent || !editPseudonym.trim() || !editAccessCode.trim()}
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isUpdatingStudent ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <span>Salvar Alterações</span>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------- */}
+      {/* DELETE STUDENT CONFIRMATION MODAL */}
+      {/* ------------------------------------------------------------------- */}
+      {showDeleteModal && studentToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-rose-200 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">
+                  Excluir Estudante e Histórico
+                </h3>
+                <span className="text-xs text-rose-600 font-semibold">
+                  Ação definitiva e irreversível
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-rose-50/60 border border-rose-200/80 rounded-2xl text-xs text-slate-700 space-y-2">
+              <p>
+                Você está prestes a excluir o estudante <strong className="text-slate-900">{studentToDelete.pseudonym}</strong> (Código: <code className="font-mono font-bold text-rose-700">{studentToDelete.accessCode}</code>).
+              </p>
+              <p className="text-[11px] text-slate-600">
+                Esta operação removerá <strong>em definitivo</strong> todas as relações vinculadas a este estudante:
+              </p>
+              <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
+                <li>Respostas das 10 questões do Modo Avaliação</li>
+                <li>Tentativas e histórico do Modo Treino</li>
+                <li>Notas calculadas e eventuais ajustes de pontuação</li>
+                <li>Registros de auditoria associados</li>
+              </ul>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setStudentToDelete(null);
+                }}
+                disabled={isDeletingStudent}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-100 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteStudent}
+                disabled={isDeletingStudent}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isDeletingStudent ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Excluindo...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Excluir Definitivamente</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
