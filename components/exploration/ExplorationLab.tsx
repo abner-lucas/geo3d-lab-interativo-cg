@@ -151,8 +151,9 @@ export function ExplorationLab() {
             solidType={activeSolid}
             height={440}
             interactive={true}
-            allowUnfold={false}
-            showFaceColors={false}
+            allowUnfold={true}
+            allowExplode={true}
+            showFaceColors={true}
           />
 
           {/* Spatial Axes Explanation Bar */}

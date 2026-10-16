@@ -311,7 +311,6 @@ export function QuestionRenderer({
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm">Quadrado</p>
-                <span className="text-xs text-slate-500">Superfície plana (2D)</span>
               </div>
             </button>
 
@@ -332,11 +331,10 @@ export function QuestionRenderer({
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm">Triângulo</p>
-                <span className="text-xs text-slate-500">Superfície plana (2D)</span>
               </div>
             </button>
 
-            {/* Opção 3: Cubo 3D (com volume!) */}
+            {/* Opção 3: Cubo */}
             <button
               type="button"
               onClick={() => handleSelectOption('cube')}
@@ -352,8 +350,7 @@ export function QuestionRenderer({
                 <GeoCanvas solidType="cube" height={128} interactive={false} showFaceColors={false} autoRotateInit={true} />
               </div>
               <div>
-                <p className="font-bold text-slate-800 text-sm">Cubo Espacial</p>
-                <span className="text-xs text-emerald-600 font-semibold">Possui Volume (3D)</span>
+                <p className="font-bold text-slate-800 text-sm">Cubo</p>
               </div>
             </button>
           </div>
@@ -740,11 +737,11 @@ export function QuestionRenderer({
                   </div>
                   <div className="text-left">
                     <p className="font-bold text-xs text-slate-800">Vista A</p>
-                    <span className="text-[11px] text-slate-500">Retângulo dividido pela aresta superior</span>
+                    <span className="text-[11px] text-slate-500">Retângulo com divisão central</span>
                   </div>
                 </button>
 
-                {/* Vista B: Triângulo (Vista Lateral/Frontal) */}
+                {/* Vista B: Triângulo */}
                 <button
                   type="button"
                   onClick={() => handleSelectOption('view_b')}
@@ -762,7 +759,7 @@ export function QuestionRenderer({
                   </div>
                   <div className="text-left">
                     <p className="font-bold text-xs text-slate-800">Vista B</p>
-                    <span className="text-[11px] text-slate-500">Triângulo (Base frontal)</span>
+                    <span className="text-[11px] text-slate-500">Triângulo simples</span>
                   </div>
                 </button>
 

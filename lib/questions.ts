@@ -93,9 +93,9 @@ export const QUESTIONS: QuestionDef[] = [
     points: 1.0,
     type: 'select_single',
     options: [
-      { id: 'square', label: 'Quadrado Plano', is3D: false, shape: 'square' },
-      { id: 'triangle', label: 'Triângulo Plano', is3D: false, shape: 'triangle' },
-      { id: 'cube', label: 'Cubo Espacial', is3D: true, shape: 'cube' }
+      { id: 'square', label: 'Quadrado', is3D: false, shape: 'square' },
+      { id: 'triangle', label: 'Triângulo', is3D: false, shape: 'triangle' },
+      { id: 'cube', label: 'Cubo', is3D: true, shape: 'cube' }
     ]
   },
   // QUESTÃO 2 (1.0 pt) — Nível 1: Simples
@@ -119,7 +119,7 @@ export const QUESTIONS: QuestionDef[] = [
     id: 3,
     block: 'BLOCK_2_NETS',
     blockTitle: 'Nível 2 • Planificação Inicial',
-    title: 'Encontre o Cilindro',
+    title: 'Qual sólido este molde forma?',
     visualPrompt: 'Observe o molde com 1 retângulo central e 2 círculos nas extremidades. Qual sólido ele forma?',
     points: 1.0,
     type: 'select_net',
@@ -134,7 +134,7 @@ export const QUESTIONS: QuestionDef[] = [
     id: 4,
     block: 'BLOCK_2_NETS',
     blockTitle: 'Nível 2 • Planificação Regular',
-    title: 'Encontre o Cubo',
+    title: 'Qual sólido é formado por este molde?',
     visualPrompt: 'Observe a planificação composta por 6 faces quadradas iguais. Qual sólido corresponde a ela?',
     points: 1.0,
     type: 'select_net',
@@ -149,7 +149,7 @@ export const QUESTIONS: QuestionDef[] = [
     id: 5,
     block: 'BLOCK_2_NETS',
     blockTitle: 'Nível 2 • Planificação Combinada',
-    title: 'Encontre o Prisma Triangular',
+    title: 'Qual sólido possui este molde?',
     visualPrompt: 'Observe o molde com 3 faces retangulares e 2 bases triangulares. Qual é o sólido formado?',
     points: 1.0,
     type: 'select_net',
@@ -215,9 +215,9 @@ export const QUESTIONS: QuestionDef[] = [
     points: 0.75,
     type: 'orthographic_view',
     options: [
-      { id: 'view_a', name: 'Vista A: Retângulo com linha da aresta central', isCorrect: true },
-      { id: 'view_b', name: 'Vista B: Triângulo isolado', isCorrect: false },
-      { id: 'view_c', name: 'Vista C: Círculo contínuo', isCorrect: false }
+      { id: 'view_a', name: 'Vista A: Retângulo com linha divisória', isCorrect: true },
+      { id: 'view_b', name: 'Vista B: Triângulo simples', isCorrect: false },
+      { id: 'view_c', name: 'Vista C: Círculo simples', isCorrect: false }
     ]
   },
   // QUESTÃO 10 (1.5 pt) — Nível 5: Complexidade Máxima (Composição Construtiva 3D)
@@ -230,9 +230,9 @@ export const QUESTIONS: QuestionDef[] = [
     points: 1.5,
     type: 'compose_house',
     options: [
-      { id: 'cube', name: 'Cubo (Corpo)', type: 'base' },
-      { id: 'triangular_prism', name: 'Prisma Triangular (Telhado)', type: 'roof' },
-      { id: 'sphere', name: 'Esfera (Distrator)', type: 'distractor' }
+      { id: 'cube', name: 'Cubo', type: 'base' },
+      { id: 'triangular_prism', name: 'Prisma Triangular', type: 'roof' },
+      { id: 'sphere', name: 'Esfera', type: 'distractor' }
     ]
   }
 ];

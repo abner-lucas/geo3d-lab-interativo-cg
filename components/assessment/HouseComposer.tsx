@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Box, Triangle, Circle, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react';
+import { Box, Triangle, Circle, CheckCircle2, RotateCcw, ArrowRight, Sparkles } from 'lucide-react';
+import { GeoCanvas } from '@/components/three/GeoCanvas';
 
 interface HouseComposerProps {
   initialValue?: { basePiece?: string; roofPiece?: string };
@@ -91,22 +92,29 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
   return (
     <div className="w-full flex flex-col gap-6">
       {/* Target Composition & Model Preview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Model Reference Card */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col items-center justify-center text-center shadow-xs">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-            Referência Desejada: Casa 3D
-          </span>
-          <div className="w-48 h-48 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center p-3">
-            {/* Telhado Triângulo */}
-            <div className="w-0 h-0 border-l-[45px] border-l-transparent border-r-[45px] border-r-transparent border-b-[40px] border-b-amber-500 mb-0.5 filter drop-shadow-xs" />
-            {/* Parede Cubo */}
-            <div className="w-24 h-24 bg-blue-500 rounded-sm border-2 border-blue-700 flex items-center justify-center shadow-xs">
-              <span className="text-white text-xs font-bold">CORPO</span>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* Model Reference Card: Procedural 3D Target Model */}
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col items-center justify-between text-center shadow-xs gap-3">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full">
+              Modelo Alvo: Casa 3D
+            </span>
+            <span className="text-[11px] text-slate-600 font-medium">Gire para inspecionar</span>
           </div>
-          <p className="text-xs text-slate-600 mt-3 font-medium">
-            Telhado triangular sobre base cúbica quadrada
+
+          <div className="w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+            <GeoCanvas
+              compositeModel={{ basePiece: 'cube', roofPiece: 'triangular_prism' }}
+              height={220}
+              interactive={true}
+              allowUnfold={false}
+              allowExplode={true}
+              autoRotateInit={false}
+            />
+          </div>
+
+          <p className="text-xs text-slate-600 font-medium">
+            Estrutura de referência: Observe a inclinação do telhado e a forma da base no modelo 3D para escolher as peças correspondentes.
           </p>
         </div>
 
@@ -195,6 +203,19 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
             </div>
           </div>
 
+          {/* Live Student Assembly 3D Preview */}
+          {(basePiece || roofPiece) && (
+            <div className="w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-white mb-2 shadow-2xs">
+              <GeoCanvas
+                compositeModel={{ basePiece, roofPiece }}
+                height={128}
+                interactive={true}
+                allowUnfold={false}
+                allowExplode={false}
+              />
+            </div>
+          )}
+
           <div className="text-center text-xs text-slate-600">
             {basePiece && roofPiece ? (
               <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
@@ -202,7 +223,7 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
                 Estrutura completa!
               </span>
             ) : (
-              <span>Arraste ou selecione as peças abaixo.</span>
+              <span>Arraste ou selecione as peças abaixo para construir.</span>
             )}
           </div>
         </div>

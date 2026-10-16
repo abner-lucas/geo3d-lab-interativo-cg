@@ -25,7 +25,6 @@ export function Classifier2D3D({
     {
       id: 'circle',
       name: 'Círculo',
-      typeLabel: 'Forma Plana',
       icon: (
         <svg viewBox="0 0 40 40" className="w-10 h-10">
           <circle cx="20" cy="20" r="16" fill="#bfdbfe" stroke="#2563eb" strokeWidth="2.5" />
@@ -35,7 +34,6 @@ export function Classifier2D3D({
     {
       id: 'cylinder',
       name: 'Cilindro',
-      typeLabel: 'Sólido Espacial',
       icon: (
         <svg viewBox="0 0 40 40" className="w-10 h-10">
           <ellipse cx="20" cy="10" rx="14" ry="5" fill="#93c5fd" stroke="#1d4ed8" strokeWidth="2" />
@@ -47,7 +45,6 @@ export function Classifier2D3D({
     {
       id: 'rectangle',
       name: 'Retângulo',
-      typeLabel: 'Forma Plana',
       icon: (
         <svg viewBox="0 0 40 40" className="w-10 h-10">
           <rect x="4" y="10" width="32" height="20" fill="#fef08a" stroke="#ca8a04" strokeWidth="2.5" rx="2" />
@@ -57,7 +54,6 @@ export function Classifier2D3D({
     {
       id: 'pyramid',
       name: 'Pirâmide',
-      typeLabel: 'Sólido Espacial',
       icon: (
         <svg viewBox="0 0 40 40" className="w-10 h-10">
           <polygon points="20,4 6,32 34,32" fill="#fed7aa" stroke="#c2410c" strokeWidth="2" />
