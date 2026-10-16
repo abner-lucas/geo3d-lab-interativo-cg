@@ -211,10 +211,6 @@ export default function HomePage() {
 
           <div className="flex items-center gap-4 text-[11px]">
             <span>Acessibilidade WCAG 2.2 AA</span>
-            <span>•</span>
-            <span>Sem dependência de áudio</span>
-            <span>•</span>
-            <span>Persistência Supabase / PostgreSQL</span>
           </div>
         </div>
       </footer>
