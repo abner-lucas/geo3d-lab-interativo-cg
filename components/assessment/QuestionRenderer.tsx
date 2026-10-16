@@ -287,12 +287,12 @@ export function QuestionRenderer({
                 Selecione abaixo o sólido correto antes de visualizar a dobradura.
               </p>
 
-              {/* Demonstração de Dobradura para Aprendizagem (permitida no treino ou após responder) */}
-              {(mode === 'PRACTICE' || currentAnswer?.selectedOption) && (
+              {/* Demonstração de Dobradura para Aprendizagem (exclusiva no modo treino) */}
+              {mode === 'PRACTICE' && (
                 <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-xs font-semibold text-blue-900">
                     <Sparkles className="w-4 h-4 text-blue-600" />
-                    <span>Recurso Pedagógico: Ver Dobradura</span>
+                    <span>Recurso Pedagógico (Treino): Ver Dobradura</span>
                   </div>
                   <button
                     type="button"
@@ -307,7 +307,7 @@ export function QuestionRenderer({
           </div>
 
           {/* Animação de Dobradura Interativa */}
-          {showDemoAnimation && (
+          {mode === 'PRACTICE' && showDemoAnimation && (
             <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
@@ -416,12 +416,12 @@ export function QuestionRenderer({
             </button>
           </div>
 
-          {/* Demonstração visual animada após confirmação ou no modo treino */}
-          {(mode === 'PRACTICE' || currentAnswer?.selectedOption) && (
+          {/* Demonstração visual animada exclusiva no modo treino após confirmar */}
+          {mode === 'PRACTICE' && isConfirmed && (
             <div className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Comprovação Geométrica 3D
+                  Comprovação Geométrica 3D (Modo Treino)
                 </span>
                 <span className="text-xs text-emerald-600 font-semibold">
                   O Molde A dobra perfeitamente sem colidir faces

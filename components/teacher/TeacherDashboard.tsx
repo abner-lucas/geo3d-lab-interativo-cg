@@ -35,11 +35,11 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
-  // Selected student for detail drawer
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentAttempt, setStudentAttempt] = useState<Attempt | null>(null);
   const [pedagogicalNotes, setPedagogicalNotes] = useState<string>('');
   const [isSavingNotes, setIsSavingNotes] = useState<boolean>(false);
+  const [notesSaved, setNotesSaved] = useState<boolean>(false);
 
   // Grade adjustment state
   const [showAdjustmentModal, setShowAdjustmentModal] = useState<boolean>(false);
@@ -94,13 +94,16 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
 
   const loadClassDetails = async (classId: string) => {
     try {
+      setIsLoading(true);
       const res = await fetch(`/api/teacher/students?classId=${classId}`);
       if (res.ok) {
         const data = await res.json();
         setStudents(data.students || []);
         setAttempts(data.attempts || []);
       }
-    } catch {}
+    } catch {} finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClassChange = async (classId: string) => {
@@ -132,6 +135,7 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
   const handleSelectStudent = (student: Student) => {
     setSelectedStudent(student);
     setPedagogicalNotes(student.notes || '');
+    setNotesSaved(false);
     const att = attempts.find(a => a.studentId === student.id && a.mode === 'EVALUATION');
     setStudentAttempt(att || null);
   };
@@ -141,6 +145,7 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
     if (!selectedStudent) return;
     try {
       setIsSavingNotes(true);
+      setNotesSaved(false);
       const res = await fetch('/api/teacher/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,6 +157,8 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
       if (res.ok) {
         setStudents(prev => prev.map(s => s.id === selectedStudent.id ? { ...s, notes: pedagogicalNotes } : s));
         setSelectedStudent(prev => prev ? { ...prev, notes: pedagogicalNotes } : null);
+        setNotesSaved(true);
+        setTimeout(() => setNotesSaved(false), 2500);
       }
     } catch {} finally {
       setIsSavingNotes(false);
@@ -283,22 +290,23 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
     document.body.removeChild(link);
   };
 
-  // Metrics calculation
+  // Metrics calculation (filtered by official EVALUATION mode)
+  const evalAttempts = attempts.filter(a => a.mode === 'EVALUATION');
   const totalStudents = students.length;
-  const startedAttempts = attempts.filter(a => a.status === 'IN_PROGRESS').length;
-  const submittedAttempts = attempts.filter(a => a.status === 'SUBMITTED').length;
+  const startedAttempts = evalAttempts.filter(a => a.status === 'IN_PROGRESS').length;
+  const submittedAttempts = evalAttempts.filter(a => a.status === 'SUBMITTED' || a.status === 'REVIEWED').length;
   
-  const scoresArray = attempts
-    .filter(a => a.status === 'SUBMITTED')
+  const scoresArray = evalAttempts
+    .filter(a => a.status === 'SUBMITTED' || a.status === 'REVIEWED')
     .map(a => (a.scoreAdjusted !== null && a.scoreAdjusted !== undefined ? a.scoreAdjusted : a.totalScore));
   
   const averageScore = scoresArray.length > 0 
-    ? (scoresArray.reduce((acc, curr) => acc + curr, 0) / scoresArray.length).toFixed(1)
+    ? String(Number((scoresArray.reduce((acc, curr) => acc + curr, 0) / scoresArray.length).toFixed(2)))
     : '--';
 
   // Find most missed question
   const questionErrorCounts: Record<number, number> = {};
-  attempts.forEach(a => {
+  evalAttempts.forEach(a => {
     Object.values(a.responses || {}).forEach(r => {
       if (!r.isCorrect) {
         questionErrorCounts[r.questionId] = (questionErrorCounts[r.questionId] || 0) + 1;
@@ -358,6 +366,15 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
               <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
             ))}
           </select>
+
+          <button
+            onClick={() => selectedClassId && loadClassDetails(selectedClassId)}
+            className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition"
+            title="Atualizar Dados da Turma"
+            aria-label="Atualizar dados da turma"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
 
           <button
             onClick={() => setShowNewClassModal(true)}
@@ -495,7 +512,19 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredStudents.map(student => {
+                {isLoading && filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-xs text-slate-500 font-medium">
+                      Carregando dados da turma...
+                    </td>
+                  </tr>
+                ) : filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-xs text-slate-500 font-medium">
+                      Nenhum estudante encontrado para o filtro informado.
+                    </td>
+                  </tr>
+                ) : filteredStudents.map(student => {
                   const att = attempts.find(a => a.studentId === student.id && a.mode === 'EVALUATION');
                   const answered = att ? Object.keys(att.responses || {}).length : 0;
                   const isSelected = selectedStudent?.id === student.id;
@@ -524,7 +553,7 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                       <td className="py-3 text-center">
                         {finalScore !== null ? (
                           <span className="font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-800">
-                            {finalScore.toFixed(1)}
+                            {Number(finalScore.toFixed(2))}
                           </span>
                         ) : (
                           <span className="text-slate-400 font-semibold">--</span>
@@ -563,7 +592,7 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                   <span className="text-[10px] font-bold text-slate-600 uppercase block">Nota Final</span>
                   <span className="text-2xl font-black text-blue-600">
                     {studentAttempt
-                      ? (studentAttempt.scoreAdjusted ?? studentAttempt.totalScore).toFixed(1)
+                      ? Number((studentAttempt.scoreAdjusted ?? studentAttempt.totalScore).toFixed(2))
                       : '--'}
                   </span>
                 </div>
@@ -576,7 +605,7 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                     <span className="font-bold text-slate-700">Ajuste Justificado de Nota</span>
                     {studentAttempt.scoreAdjusted !== null && studentAttempt.scoreAdjusted !== undefined && (
                       <p className="text-[11px] text-amber-700 font-medium">
-                        Nota original: {studentAttempt.totalScore.toFixed(1)}
+                        Nota original: {Number(studentAttempt.totalScore.toFixed(2))}
                       </p>
                     )}
                   </div>
@@ -646,10 +675,12 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
                   <button
                     onClick={handleSaveNotes}
                     disabled={isSavingNotes}
-                    className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition"
+                    className={`flex items-center gap-1 text-xs font-bold transition ${
+                      notesSaved ? 'text-emerald-600' : 'text-blue-600 hover:text-blue-800'
+                    }`}
                   >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>{isSavingNotes ? 'Gravando...' : 'Salvar Nota'}</span>
+                    {notesSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                    <span>{isSavingNotes ? 'Gravando...' : notesSaved ? 'Salvo!' : 'Salvar Nota'}</span>
                   </button>
                 </div>
                 <textarea

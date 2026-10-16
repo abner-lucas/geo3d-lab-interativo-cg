@@ -28,13 +28,26 @@ interface StudentAssessmentViewProps {
   initialAttempt: Attempt;
   mode: AssessmentMode;
   onExit: () => void;
+  onAttemptChange?: (attempt: Attempt) => void;
+}
+
+function isQuestionAnswered(questionId: number, ans: any): boolean {
+  if (!ans) return false;
+  if (questionId === 2) {
+    return Object.keys(ans.classifications || {}).length === 4;
+  }
+  if (questionId === 10) {
+    return Boolean(ans.basePiece && ans.roofPiece);
+  }
+  return Boolean(ans.selectedOption);
 }
 
 export function StudentAssessmentView({
   student,
   initialAttempt,
   mode,
-  onExit
+  onExit,
+  onAttemptChange
 }: StudentAssessmentViewProps) {
   const [attempt, setAttempt] = useState<Attempt>(initialAttempt);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
@@ -52,8 +65,12 @@ export function StudentAssessmentView({
   const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState<boolean>(false);
   const [showLibrasPanel, setShowLibrasPanel] = useState<boolean>(false);
-  const [reducedMotion, setReducedMotion] = useState<boolean>(false);
-  const [assessmentFinished, setAssessmentFinished] = useState<boolean>(initialAttempt.status === 'SUBMITTED');
+  const [reducedMotion, setReducedMotion] = useState<boolean>(() =>
+    typeof document !== 'undefined' ? document.body.classList.contains('reduced-motion') : false
+  );
+  const [assessmentFinished, setAssessmentFinished] = useState<boolean>(
+    initialAttempt.status === 'SUBMITTED' || initialAttempt.status === 'REVIEWED'
+  );
 
   const currentQ: QuestionDef = QUESTIONS[currentQuestionIndex];
   const currentAnswer = localAnswers[currentQ.id];
@@ -83,6 +100,7 @@ export function StudentAssessmentView({
       if (res.ok) {
         const result = await res.json();
         setAttempt(result.attempt);
+        onAttemptChange?.(result.attempt);
         setSaveStatus('Salvo automaticamente');
       } else {
         setSaveStatus('Erro ao salvar');
@@ -107,17 +125,20 @@ export function StudentAssessmentView({
       if (res.ok) {
         const result = await res.json();
         setAttempt(result.attempt);
+        onAttemptChange?.(result.attempt);
         setAssessmentFinished(true);
         setShowFinishConfirm(false);
 
-        // Celebration confetti for student
-        try {
-          confetti({
-            particleCount: 120,
-            spread: 70,
-            origin: { y: 0.6 }
-          });
-        } catch {}
+        // Celebration confetti for student (unless reduced motion is enabled)
+        if (!reducedMotion && !document.body.classList.contains('reduced-motion')) {
+          try {
+            confetti({
+              particleCount: 120,
+              spread: 70,
+              origin: { y: 0.6 }
+            });
+          } catch {}
+        }
       }
     } catch (err) {
       alert('Não foi possível finalizar a avaliação. Tente novamente.');
@@ -137,8 +158,8 @@ export function StudentAssessmentView({
     }
   };
 
-  const answeredCount = Object.keys(localAnswers).length;
-  const isCurrentAnswered = currentAnswer !== undefined;
+  const answeredCount = QUESTIONS.filter(q => isQuestionAnswered(q.id, localAnswers[q.id])).length;
+  const isCurrentAnswered = isQuestionAnswered(currentQ.id, currentAnswer);
 
   // -------------------------------------------------------------------------
   // FINAL SUBMITTED SCREEN
@@ -171,7 +192,7 @@ export function StudentAssessmentView({
             </div>
             <div className="text-right">
               <p className="text-xs text-slate-500 font-bold uppercase">Questões Registradas</p>
-              <p className="font-bold text-base text-blue-600">10 de 10</p>
+              <p className="font-bold text-base text-blue-600">{answeredCount} de 10</p>
             </div>
           </div>
 
@@ -209,10 +230,19 @@ export function StudentAssessmentView({
             {student.displayNumber}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="font-bold text-slate-900 text-sm">{student.pseudonym}</span>
               <span className="px-2 py-0.5 rounded-md bg-slate-100 font-mono text-xs text-slate-600">
                 {student.accessCode}
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                  mode === 'EVALUATION'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-emerald-100 text-emerald-800'
+                }`}
+              >
+                {mode === 'EVALUATION' ? 'Modo Avaliação' : 'Modo Treino'}
               </span>
             </div>
             <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
@@ -299,7 +329,7 @@ export function StudentAssessmentView({
 
         <div className="grid grid-cols-10 gap-1.5 sm:gap-2">
           {QUESTIONS.map((q, idx) => {
-            const isAnswered = localAnswers[q.id] !== undefined;
+            const isAnswered = isQuestionAnswered(q.id, localAnswers[q.id]);
             const isCurrent = idx === currentQuestionIndex;
 
             return (
@@ -429,7 +459,7 @@ export function StudentAssessmentView({
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 max-h-72 overflow-y-auto p-1">
               {QUESTIONS.map((q, idx) => {
-                const ans = localAnswers[q.id];
+                const answered = isQuestionAnswered(q.id, localAnswers[q.id]);
                 return (
                   <button
                     key={q.id}
@@ -438,14 +468,14 @@ export function StudentAssessmentView({
                       setShowReviewModal(false);
                     }}
                     className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition ${
-                      ans !== undefined
+                      answered
                         ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                         : 'border-amber-300 bg-amber-50 text-amber-800'
                     }`}
                   >
                     <span className="font-black text-base">Q{q.id}</span>
                     <span className="text-[10px] font-bold uppercase">
-                      {ans !== undefined ? 'Respondida' : 'Pendente'}
+                      {answered ? 'Respondida' : 'Pendente'}
                     </span>
                   </button>
                 );

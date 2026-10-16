@@ -14,6 +14,11 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
   const [roofPiece, setRoofPiece] = useState<string>(initialValue?.roofPiece || '');
   const [selectedPalettePiece, setSelectedPalettePiece] = useState<string | null>(null);
 
+  useEffect(() => {
+    setBasePiece(initialValue?.basePiece || '');
+    setRoofPiece(initialValue?.roofPiece || '');
+  }, [initialValue?.basePiece, initialValue?.roofPiece]);
+
   const updatePieces = (newBase: string, newRoof: string) => {
     if (readOnly) return;
     setBasePiece(newBase);

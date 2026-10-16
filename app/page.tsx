@@ -82,9 +82,11 @@ export default function HomePage() {
             <button
               onClick={() => {
                 if (activeView === 'STUDENT_ASSESSMENT') {
-                  if (confirm('Deseja pausar sua atividade e voltar ao menu? Suas respostas foram salvas.')) {
-                    setActiveView('STUDENT_LOGIN');
+                  if (confirm('Deseja pausar sua atividade e voltar ao menu inicial? Suas respostas foram salvas.')) {
+                    handleExitStudentAssessment();
                   }
+                } else if (activeStudent && activeAttempt) {
+                  setActiveView('STUDENT_ASSESSMENT');
                 } else {
                   setActiveView('STUDENT_LOGIN');
                 }
@@ -96,7 +98,7 @@ export default function HomePage() {
               }`}
             >
               <UserCheck className="w-4 h-4" />
-              <span>Estudante</span>
+              <span>{activeStudent && activeView !== 'STUDENT_ASSESSMENT' ? 'Voltar à Prova' : 'Estudante'}</span>
             </button>
 
             <button
@@ -167,6 +169,7 @@ export default function HomePage() {
             initialAttempt={activeAttempt}
             mode={assessmentMode}
             onExit={handleExitStudentAssessment}
+            onAttemptChange={setActiveAttempt}
           />
         )}
 

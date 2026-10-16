@@ -113,6 +113,12 @@ export function GeoCanvas({
     }
 
     const t = Math.max(0, Math.min(1, unfoldT)); // Clamp 0 to 1
+    const wireMat = new THREE.LineBasicMaterial({ color: 0x0f172a, linewidth: 2 });
+    const addEdgeWire = (mesh: THREE.Mesh, thresholdAngle?: number) => {
+      const edgesGeom = new THREE.EdgesGeometry(mesh.geometry, thresholdAngle);
+      mesh.add(new THREE.LineSegments(edgesGeom, wireMat));
+      return mesh;
+    };
 
     if (solid === 'cube') {
       // HINGED CUBE (Latin cross net: Center, Front, Back, Left, Right, Top)
@@ -128,15 +134,7 @@ export function GeoCanvas({
           metalness: 0.1,
           side: THREE.DoubleSide
         });
-        const mesh = new THREE.Mesh(geom, mat);
-        
-        // Edge lines for high contrast WCAG
-        const wireMat = new THREE.LineBasicMaterial({ color: 0x0f172a, linewidth: 2 });
-        const edgesGeom = new THREE.EdgesGeometry(geom);
-        const wire = new THREE.LineSegments(edgesGeom, wireMat);
-        mesh.add(wire);
-
-        return mesh;
+        return addEdgeWire(new THREE.Mesh(geom, mat));
       };
 
       // 1. BASE FACE (Center flat on XZ plane, y = -H when closed)
@@ -196,52 +194,77 @@ export function GeoCanvas({
       group.add(rightPivot);
 
     } else if (solid === 'cuboid') {
-      const W = 3.0;
-      const H = 1.6;
-      const D = 2.0;
+      const W = 2.6;
+      const H = 1.4;
+      const D = 1.8;
 
-      if (t === 0) {
-        const geom = new THREE.BoxGeometry(W, H, D);
-        const materials = colorful 
-          ? FACE_COLORS.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.3, metalness: 0.1 }))
-          : [new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 })];
-        const mesh = new THREE.Mesh(geom, materials.length === 6 ? materials : materials[0]);
-        const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: 0x0f172a, linewidth: 2 }));
-        mesh.add(wire);
-        group.add(mesh);
-      } else {
-        const baseGeom = new THREE.PlaneGeometry(W, D);
-        const baseMesh = new THREE.Mesh(baseGeom, new THREE.MeshStandardMaterial({ color: FACE_COLORS[3], side: THREE.DoubleSide }));
-        baseMesh.rotation.x = Math.PI / 2;
-        group.add(baseMesh);
+      const makeRect = (w: number, d: number, colorIdx: number) => {
+        const col = colorful ? FACE_COLORS[colorIdx % FACE_COLORS.length] : 0x0284c7;
+        return addEdgeWire(
+          new THREE.Mesh(
+            new THREE.PlaneGeometry(w, d),
+            new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.1, side: THREE.DoubleSide })
+          )
+        );
+      };
 
-        const fGeom = new THREE.PlaneGeometry(W, H);
-        const fMesh = new THREE.Mesh(fGeom, new THREE.MeshStandardMaterial({ color: FACE_COLORS[0], side: THREE.DoubleSide }));
-        fMesh.position.set(0, 0, D / 2 + (H / 2) * t);
-        fMesh.rotation.x = Math.PI / 2 * (1 - (1 - t));
-        group.add(fMesh);
+      const yOffset = (-H / 2) * (1 - t);
 
-        const bMesh = new THREE.Mesh(fGeom, new THREE.MeshStandardMaterial({ color: FACE_COLORS[1], side: THREE.DoubleSide }));
-        bMesh.position.set(0, 0, -D / 2 - (H / 2) * t);
-        bMesh.rotation.x = Math.PI / 2;
-        group.add(bMesh);
+      // Base (W x D)
+      const base = makeRect(W, D, 3);
+      base.rotation.x = Math.PI / 2;
+      base.position.set(0, yOffset, 0);
+      group.add(base);
 
-        const sGeom = new THREE.PlaneGeometry(H, D);
-        const lMesh = new THREE.Mesh(sGeom, new THREE.MeshStandardMaterial({ color: FACE_COLORS[4], side: THREE.DoubleSide }));
-        lMesh.position.set(-W / 2 - (H / 2) * t, 0, 0);
-        lMesh.rotation.x = Math.PI / 2;
-        group.add(lMesh);
+      // Front (W x H) hinged at z = +D/2
+      const frontPivot = new THREE.Group();
+      frontPivot.position.set(0, yOffset, D / 2);
+      const front = makeRect(W, H, 0);
+      front.rotation.x = Math.PI / 2;
+      front.position.set(0, 0, H / 2);
+      frontPivot.add(front);
+      frontPivot.rotation.x = (1 - t) * (-Math.PI / 2);
+      group.add(frontPivot);
 
-        const rMesh = new THREE.Mesh(sGeom, new THREE.MeshStandardMaterial({ color: FACE_COLORS[5], side: THREE.DoubleSide }));
-        rMesh.position.set(W / 2 + (H / 2) * t, 0, 0);
-        rMesh.rotation.x = Math.PI / 2;
-        group.add(rMesh);
+      // Back (W x H) hinged at z = -D/2
+      const backPivot = new THREE.Group();
+      backPivot.position.set(0, yOffset, -D / 2);
+      const back = makeRect(W, H, 1);
+      back.rotation.x = Math.PI / 2;
+      back.position.set(0, 0, -H / 2);
+      backPivot.add(back);
+      backPivot.rotation.x = (1 - t) * (Math.PI / 2);
+      group.add(backPivot);
 
-        const topMesh = new THREE.Mesh(baseGeom, new THREE.MeshStandardMaterial({ color: FACE_COLORS[2], side: THREE.DoubleSide }));
-        topMesh.position.set(0, 0, -D / 2 - H * t - (D / 2) * t);
-        topMesh.rotation.x = Math.PI / 2;
-        group.add(topMesh);
-      }
+      // Top (W x D) hinged at outer edge of Back
+      const topPivot = new THREE.Group();
+      topPivot.position.set(0, 0, -H);
+      const top = makeRect(W, D, 2);
+      top.rotation.x = Math.PI / 2;
+      top.position.set(0, 0, -D / 2);
+      topPivot.add(top);
+      topPivot.rotation.x = (1 - t) * (Math.PI / 2);
+      backPivot.add(topPivot);
+
+      // Left (H x D) hinged at x = -W/2
+      const leftPivot = new THREE.Group();
+      leftPivot.position.set(-W / 2, yOffset, 0);
+      const left = makeRect(H, D, 4);
+      left.rotation.x = Math.PI / 2;
+      left.position.set(-H / 2, 0, 0);
+      leftPivot.add(left);
+      leftPivot.rotation.z = (1 - t) * (-Math.PI / 2);
+      group.add(leftPivot);
+
+      // Right (H x D) hinged at x = +W/2
+      const rightPivot = new THREE.Group();
+      rightPivot.position.set(W / 2, yOffset, 0);
+      const right = makeRect(H, D, 5);
+      right.rotation.x = Math.PI / 2;
+      right.position.set(H / 2, 0, 0);
+      rightPivot.add(right);
+      rightPivot.rotation.z = (1 - t) * (Math.PI / 2);
+      group.add(rightPivot);
 
     } else if (solid === 'triangular_prism') {
       if (t === 0) {
@@ -262,24 +285,21 @@ export function GeoCanvas({
           roughness: 0.35, 
           metalness: 0.1 
         });
-        const mesh = new THREE.Mesh(geom, mat);
-        const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: 0x0f172a, linewidth: 2 }));
-        mesh.add(wire);
-        group.add(mesh);
+        group.add(addEdgeWire(new THREE.Mesh(geom, mat)));
       } else {
-        const rectW = 2.2;
+        const rectW = 2.0;
         const rectH = 1.8;
 
-        const r1 = new THREE.Mesh(new THREE.PlaneGeometry(rectW, rectH), new THREE.MeshStandardMaterial({ color: 0x2563eb, side: THREE.DoubleSide }));
+        const r1 = addEdgeWire(new THREE.Mesh(new THREE.PlaneGeometry(rectW, rectH), new THREE.MeshStandardMaterial({ color: 0x2563eb, side: THREE.DoubleSide })));
         r1.rotation.x = Math.PI / 2;
         group.add(r1);
 
-        const r2 = new THREE.Mesh(new THREE.PlaneGeometry(rectW, rectH), new THREE.MeshStandardMaterial({ color: 0x38bdf8, side: THREE.DoubleSide }));
+        const r2 = addEdgeWire(new THREE.Mesh(new THREE.PlaneGeometry(rectW, rectH), new THREE.MeshStandardMaterial({ color: 0x38bdf8, side: THREE.DoubleSide })));
         r2.rotation.x = Math.PI / 2;
         r2.position.set(-rectW * t, 0, 0);
         group.add(r2);
 
-        const r3 = new THREE.Mesh(new THREE.PlaneGeometry(rectW, rectH), new THREE.MeshStandardMaterial({ color: 0x60a5fa, side: THREE.DoubleSide }));
+        const r3 = addEdgeWire(new THREE.Mesh(new THREE.PlaneGeometry(rectW, rectH), new THREE.MeshStandardMaterial({ color: 0x60a5fa, side: THREE.DoubleSide })));
         r3.rotation.x = Math.PI / 2;
         r3.position.set(rectW * t, 0, 0);
         group.add(r3);
@@ -287,21 +307,21 @@ export function GeoCanvas({
         const triShape1 = new THREE.Shape();
         triShape1.moveTo(-rectW / 2, 0);
         triShape1.lineTo(rectW / 2, 0);
-        triShape1.lineTo(0, 1.6);
+        triShape1.lineTo(0, 1.5);
         triShape1.closePath();
-        const t1Mesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape1), new THREE.MeshStandardMaterial({ color: 0xf59e0b, side: THREE.DoubleSide }));
+        const t1Mesh = addEdgeWire(new THREE.Mesh(new THREE.ShapeGeometry(triShape1), new THREE.MeshStandardMaterial({ color: 0xf59e0b, side: THREE.DoubleSide })));
         t1Mesh.rotation.x = Math.PI / 2;
-        t1Mesh.position.set(0, 0, -rectH / 2 - 1.6 * t);
+        t1Mesh.position.set(0, 0, -rectH / 2);
         group.add(t1Mesh);
 
         const triShape2 = new THREE.Shape();
         triShape2.moveTo(-rectW / 2, 0);
         triShape2.lineTo(rectW / 2, 0);
-        triShape2.lineTo(0, -1.6);
+        triShape2.lineTo(0, -1.5);
         triShape2.closePath();
-        const t2Mesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape2), new THREE.MeshStandardMaterial({ color: 0x10b981, side: THREE.DoubleSide }));
+        const t2Mesh = addEdgeWire(new THREE.Mesh(new THREE.ShapeGeometry(triShape2), new THREE.MeshStandardMaterial({ color: 0x10b981, side: THREE.DoubleSide })));
         t2Mesh.rotation.x = Math.PI / 2;
-        t2Mesh.position.set(0, 0, rectH / 2 + 1.6 * t);
+        t2Mesh.position.set(0, 0, rectH / 2);
         group.add(t2Mesh);
       }
 
@@ -313,14 +333,11 @@ export function GeoCanvas({
           color: colorful ? 0x8b5cf6 : 0x0284c7, 
           roughness: 0.35 
         });
-        const mesh = new THREE.Mesh(geom, mat);
-        const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: 0x0f172a, linewidth: 2 }));
-        mesh.add(wire);
-        group.add(mesh);
+        group.add(addEdgeWire(new THREE.Mesh(geom, mat)));
       } else {
-        const S = 2.0;
-        const H_tri = 2.2;
-        const baseMesh = new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshStandardMaterial({ color: 0x8b5cf6, side: THREE.DoubleSide }));
+        const S = 1.8;
+        const H_tri = 1.9;
+        const baseMesh = addEdgeWire(new THREE.Mesh(new THREE.PlaneGeometry(S, S), new THREE.MeshStandardMaterial({ color: 0x8b5cf6, side: THREE.DoubleSide })));
         baseMesh.rotation.x = Math.PI / 2;
         group.add(baseMesh);
 
@@ -330,29 +347,29 @@ export function GeoCanvas({
           s.lineTo(S / 2, 0);
           s.lineTo(0, H_tri);
           s.closePath();
-          return new THREE.Mesh(new THREE.ShapeGeometry(s), new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide }));
+          return addEdgeWire(new THREE.Mesh(new THREE.ShapeGeometry(s), new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide })));
         };
 
         const flapN = createFlap(0xec4899);
-        flapN.rotation.x = Math.PI / 2;
-        flapN.position.set(0, 0, -S / 2 - H_tri * t);
+        flapN.rotation.x = -Math.PI / 2;
+        flapN.position.set(0, 0, -S / 2);
         group.add(flapN);
 
         const flapS = createFlap(0x3b82f6);
-        flapS.rotation.x = -Math.PI / 2;
-        flapS.position.set(0, 0, S / 2 + H_tri * t);
+        flapS.rotation.x = Math.PI / 2;
+        flapS.position.set(0, 0, S / 2);
         group.add(flapS);
 
         const flapW = createFlap(0x10b981);
         flapW.rotation.x = Math.PI / 2;
-        flapW.rotation.z = Math.PI / 2;
-        flapW.position.set(-S / 2 - H_tri * t, 0, 0);
+        flapW.rotation.z = -Math.PI / 2;
+        flapW.position.set(-S / 2, 0, 0);
         group.add(flapW);
 
         const flapE = createFlap(0xf59e0b);
         flapE.rotation.x = Math.PI / 2;
-        flapE.rotation.z = -Math.PI / 2;
-        flapE.position.set(S / 2 + H_tri * t, 0, 0);
+        flapE.rotation.z = Math.PI / 2;
+        flapE.position.set(S / 2, 0, 0);
         group.add(flapE);
       }
 
@@ -363,27 +380,24 @@ export function GeoCanvas({
           color: colorful ? 0x06b6d4 : 0x0284c7, 
           roughness: 0.35 
         });
-        const mesh = new THREE.Mesh(geom, mat);
-        const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geom, 20), new THREE.LineBasicMaterial({ color: 0x0f172a, linewidth: 2 }));
-        mesh.add(wire);
-        group.add(mesh);
+        group.add(addEdgeWire(new THREE.Mesh(geom, mat), 20));
       } else {
-        const R = 1.2;
-        const rectWidth = 2 * Math.PI * R * 0.9;
-        const rectHeight = 2.4;
+        const R = 1.0;
+        const rectWidth = 4.2;
+        const rectHeight = 2.0;
 
-        const rectMesh = new THREE.Mesh(new THREE.PlaneGeometry(rectWidth, rectHeight), new THREE.MeshStandardMaterial({ color: 0x06b6d4, side: THREE.DoubleSide }));
+        const rectMesh = addEdgeWire(new THREE.Mesh(new THREE.PlaneGeometry(rectWidth, rectHeight), new THREE.MeshStandardMaterial({ color: 0x06b6d4, side: THREE.DoubleSide })));
         rectMesh.rotation.x = Math.PI / 2;
         group.add(rectMesh);
 
-        const circleTop = new THREE.Mesh(new THREE.CircleGeometry(R, 32), new THREE.MeshStandardMaterial({ color: 0x3b82f6, side: THREE.DoubleSide }));
+        const circleTop = addEdgeWire(new THREE.Mesh(new THREE.CircleGeometry(R, 32), new THREE.MeshStandardMaterial({ color: 0x3b82f6, side: THREE.DoubleSide })));
         circleTop.rotation.x = Math.PI / 2;
-        circleTop.position.set(0, 0, -rectHeight / 2 - R * t - 0.2);
+        circleTop.position.set(0, 0, -rectHeight / 2 - R * t);
         group.add(circleTop);
 
-        const circleBottom = new THREE.Mesh(new THREE.CircleGeometry(R, 32), new THREE.MeshStandardMaterial({ color: 0xa855f7, side: THREE.DoubleSide }));
+        const circleBottom = addEdgeWire(new THREE.Mesh(new THREE.CircleGeometry(R, 32), new THREE.MeshStandardMaterial({ color: 0xa855f7, side: THREE.DoubleSide })));
         circleBottom.rotation.x = Math.PI / 2;
-        circleBottom.position.set(0, 0, rectHeight / 2 + R * t + 0.2);
+        circleBottom.position.set(0, 0, rectHeight / 2 + R * t);
         group.add(circleBottom);
       }
     }
@@ -439,7 +453,8 @@ export function GeoCanvas({
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
 
-      if (autoRotateRef.current && solidGroup) {
+      const isReducedMotion = typeof document !== 'undefined' && document.body.classList.contains('reduced-motion');
+      if (autoRotateRef.current && !isReducedMotion && solidGroup) {
         rotationEulerRef.current.y += 0.008;
       }
 
@@ -568,6 +583,12 @@ export function GeoCanvas({
   const toggleFolding = () => {
     if (isAnimatingUnfold) return;
     const willOpen = currentUnfold < 0.5;
+    const targetVal = willOpen ? 1 : 0;
+    if (typeof document !== 'undefined' && document.body.classList.contains('reduced-motion')) {
+      setInternalUnfold(targetVal);
+      if (onUnfoldChange) onUnfoldChange(targetVal);
+      return;
+    }
     setUnfoldDirection(willOpen ? 'open' : 'close');
     setIsAnimatingUnfold(true);
   };

@@ -17,6 +17,10 @@ export function Classifier2D3D({
   const [itemsMap, setItemsMap] = useState<Record<string, '2D' | '3D'>>(initialClassifications);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
+  useEffect(() => {
+    setItemsMap(initialClassifications || {});
+  }, [initialClassifications]);
+
   const items = [
     {
       id: 'circle',
