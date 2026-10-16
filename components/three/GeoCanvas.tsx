@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as THREE from 'three';
 import { SolidType } from '@/types/geo3d';
 import { 
@@ -13,6 +14,7 @@ import {
   ProceduralModelRuntime
 } from '@/lib/img2threejs/proceduralModels';
 import { 
+  Box,
   RotateCw, 
   ZoomIn, 
   ZoomOut, 
@@ -26,7 +28,8 @@ import {
   Palette,
   Eye,
   Layers,
-  Sparkles
+  Sparkles,
+  X
 } from 'lucide-react';
 
 export interface GeoCanvasProps {
@@ -46,6 +49,8 @@ export interface GeoCanvasProps {
   className?: string;
   autoRotateInit?: boolean;
   onHoverPart?: (part: SculptPartMetadata | null) => void;
+  isPopupChild?: boolean;
+  onClosePopup?: () => void;
 }
 
 function checkWebGLSupport(): boolean {
@@ -74,9 +79,28 @@ export function GeoCanvas({
   className = '',
   autoRotateInit = false,
   onHoverPart,
+  isPopupChild = false,
+  onClosePopup,
 }: GeoCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [webglSupported] = useState<boolean>(() => checkWebGLSupport());
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [isFullscreenPopup, setIsFullscreenPopup] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isFullscreenPopup) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFullscreenPopup(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreenPopup]);
 
   // Folding state
   const [internalUnfold, setInternalUnfold] = useState<number>(0);
@@ -173,7 +197,7 @@ export function GeoCanvas({
     if (!container || !webglSupported) return;
 
     const width = container.clientWidth || 360;
-    const canvasHeight = typeof height === 'number' ? height : (parseInt(height, 10) || 360);
+    const canvasHeight = container.clientHeight || (typeof height === 'number' ? height : (parseInt(height, 10) || 360));
 
     // 1. Scene & Background
     const scene = new THREE.Scene();
@@ -232,14 +256,20 @@ export function GeoCanvas({
     const handleResize = () => {
       if (!container || !camera || !renderer) return;
       const newW = container.clientWidth;
-      camera.aspect = newW / canvasHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(newW, canvasHeight);
+      const newH = container.clientHeight || canvasHeight;
+      if (newW > 0 && newH > 0) {
+        camera.aspect = newW / newH;
+        camera.updateProjectionMatrix();
+        renderer.setSize(newW, newH);
+      }
     };
 
     window.addEventListener('resize', handleResize);
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => handleResize()) : null;
+    if (resizeObserver) resizeObserver.observe(container);
 
     return () => {
+      if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       if (renderer.domElement && container.contains(renderer.domElement)) {
@@ -471,6 +501,29 @@ export function GeoCanvas({
         )}
       </div>
 
+      {/* Pop-up Fullscreen Button for Non-interactive Frames */}
+      {!interactive && !isPopupChild && (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsFullscreenPopup(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.stopPropagation();
+              setIsFullscreenPopup(true);
+            }
+          }}
+          className="absolute top-2 right-2 z-20 p-1.5 rounded-lg bg-white/90 hover:bg-white text-slate-700 hover:text-blue-600 shadow-xs border border-slate-200/90 transition cursor-pointer flex items-center justify-center"
+          title="Abrir em tela cheia (Pop-up)"
+          aria-label="Abrir em tela cheia (Pop-up)"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </div>
+      )}
+
       {/* Interactive Controls Bar */}
       {interactive && (
         <>
@@ -569,6 +622,29 @@ export function GeoCanvas({
               >
                 <RotateCw className="w-5 h-5" />
               </button>
+
+              {/* Fullscreen Pop-up Toggle Button */}
+              {isPopupChild ? (
+                <button
+                  type="button"
+                  onClick={onClosePopup}
+                  className="p-2 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-slate-700 transition"
+                  title="Voltar à visualização acoplada"
+                  aria-label="Voltar à visualização acoplada"
+                >
+                  <Minimize2 className="w-5 h-5 text-blue-600" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsFullscreenPopup(true)}
+                  className="p-2 hover:bg-slate-100 active:bg-slate-200 rounded-lg text-slate-700 transition"
+                  title="Abrir em tela cheia (Pop-up)"
+                  aria-label="Abrir em tela cheia (Pop-up)"
+                >
+                  <Maximize2 className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
             {/* Right Action: Open / Close Fold Animation */}
@@ -600,6 +676,79 @@ export function GeoCanvas({
             )}
           </div>
         </>
+      )}
+
+      {/* Fullscreen Pop-up Modal Portal */}
+      {isFullscreenPopup && !isPopupChild && isMounted && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Modelo 3D em Tela Cheia (Pop-up)"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsFullscreenPopup(false);
+            }
+          }}
+        >
+          <div className="relative w-full h-full max-w-5xl max-h-[92vh] bg-white rounded-3xl border border-slate-300 shadow-2xl overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-white shrink-0 select-none">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                  <Box className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-sm tracking-tight leading-tight">
+                    Visualização 3D em Tela Cheia
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium leading-tight">
+                    Pop-up interativo ampliado
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsFullscreenPopup(false)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold text-xs transition cursor-pointer"
+                title="Voltar à visualização acoplada"
+                aria-label="Voltar à visualização acoplada"
+              >
+                <Minimize2 className="w-4 h-4 text-slate-700" />
+                <span>Voltar à visualização acoplada</span>
+              </button>
+            </div>
+
+            {/* Modal Body with Full-Height 3D Interactive Canvas */}
+            <div className="flex-1 relative w-full h-full min-h-0 bg-slate-50 overflow-hidden">
+              <GeoCanvas
+                solidType={solidType}
+                compositeModel={compositeModel}
+                interactive={true}
+                allowUnfold={allowUnfold}
+                unfoldProgress={currentUnfold}
+                onUnfoldChange={(p) => {
+                  setInternalUnfold(p);
+                  if (onUnfoldChange) onUnfoldChange(p);
+                }}
+                allowExplode={allowExplode}
+                explodeProgress={currentExplode}
+                onExplodeChange={(p) => {
+                  setInternalExplode(p);
+                  if (onExplodeChange) onExplodeChange(p);
+                }}
+                showFaceColors={showFaceColors}
+                autoRotateInit={autoRotate}
+                height="100%"
+                className="h-full w-full rounded-none border-0 shadow-none"
+                isPopupChild={true}
+                onClosePopup={() => setIsFullscreenPopup(false)}
+              />
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
