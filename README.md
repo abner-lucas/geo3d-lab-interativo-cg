@@ -24,7 +24,7 @@ Aplicação web completa, moderna e acessível desenvolvida para as atividades p
    - **Bloco 1 (2,0 pts):** Reconhecimento 2D e 3D (Q1: Objeto 3D; Q2: Classificador 2D vs 3D).
    - **Bloco 2 (3,0 pts):** Planificações e Sólidos (Q3: Cubo; Q4: Prisma Triangular; Q5: Cilindro).
    - **Bloco 3 (2,0 pts):** Previsão e Dobradura Virtual (Q6: Previsão de sólido; Q7: Molde válido vs inválidos com validação animada).
-   - **Bloco 4 (1,5 pts):** Manipulação 3D (Q8: Descoberta de face oculta oposta; Q9: Projeção de vista ortográfica superior).
+   - **Bloco 4 (1,5 pts):** Manipulação 3D (Q8: Descoberta de face oposta escondida; Q9: Identificação da vista de cima).
    - **Bloco 5 (1,5 pts):** Composição de Formas (Q10: Construção de casa 3D com cubo e prisma triangular).
 
 4. **Ambiente Docente Completo:**

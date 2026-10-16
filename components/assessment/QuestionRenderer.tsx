@@ -517,10 +517,10 @@ export function QuestionRenderer({
 
             <div className="flex-1 max-w-md flex flex-col gap-2">
               <p className="text-sm font-semibold text-slate-800">
-                Preveja mentalmente o fechamento convergente:
+                Preveja o fechamento deste molde:
               </p>
               <p className="text-xs text-slate-600 leading-relaxed">
-                O quadrado central permanece apoiado na base enquanto as 4 abas triangulares dobram-se para cima até se unirem em um único ponto no topo. Qual sólido será formado?
+                O quadrado central fica apoiado no chão enquanto as 4 abas triangulares sobem até se unirem em uma ponta no topo. Qual sólido será formado?
               </p>
             </div>
           </div>
@@ -693,7 +693,7 @@ export function QuestionRenderer({
       )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* QUESTÃO 9 (Nível 4 - Projeção Ortográfica): Encontre a Vista Superior */}
+      {/* QUESTÃO 9 (Nível 4 - Vista de Cima): Encontre a Vista Superior */}
       {/* ------------------------------------------------------------------ */}
       {question.id === 9 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -702,7 +702,7 @@ export function QuestionRenderer({
               <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                 Sólido Tridimensional (Prisma Triangular)
               </span>
-              <span className="text-xs text-slate-500">Gire para observar o ângulo superior</span>
+              <span className="text-xs text-slate-500">Gire para olhar o objeto de vários ângulos</span>
             </div>
             <GeoCanvas 
               solidType="triangular_prism" 
@@ -715,9 +715,9 @@ export function QuestionRenderer({
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col justify-between shadow-xs">
             <div>
-              <p className="font-bold text-slate-800 text-sm mb-1">Qual é a Vista Superior (de cima)?</p>
+              <p className="font-bold text-slate-800 text-sm mb-1">Qual é a Vista Superior (olhando de cima)?</p>
               <p className="text-xs text-slate-600 mb-4">
-                Imagine projetar os raios visuais diretamente de cima para baixo:
+                Imagine olhar este prisma triangular exatamente de cima para baixo:
               </p>
 
               <div className="flex flex-col gap-3">

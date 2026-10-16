@@ -17,14 +17,14 @@ export const QUESTION_BLOCKS: Record<QuestionBlock, { title: string; maxScore: n
     description: 'Abstração mental de fechamento espacial e validação de moldes sem colisão de faces.'
   },
   BLOCK_4_SPATIAL: {
-    title: 'Nível 4 (Avançado) — Manipulação 3D e Vistas',
+    title: 'Nível 4 (Avançado) — Girar em 3D e Vista de Cima',
     maxScore: 1.5,
-    description: 'Rotação tridimensional ativa para descoberta de faces ocultas e projeção ortográfica.'
+    description: 'Girar o objeto 3D para descobrir lados escondidos e reconhecer como ele fica visto de cima.'
   },
   BLOCK_5_COMPOSITION: {
-    title: 'Nível 5 (Desafio Final) — Composição Espacial 3D',
+    title: 'Nível 5 (Desafio Final) — Construção e Encaixe 3D',
     maxScore: 1.5,
-    description: 'Síntese construtiva combinando múltiplas primitivas geométricas tridimensionais.'
+    description: 'Construir uma estrutura no espaço 3D escolhendo as formas certas para cada parte.'
   }
 };
 
@@ -205,13 +205,13 @@ export const QUESTIONS: QuestionDef[] = [
       { id: 'purple', name: 'Roxo', hex: '#a855f7' }
     ]
   },
-  // QUESTÃO 9 (0.75 pt) — Nível 4: Avançado (Abstração de Projeção Ortográfica)
+  // QUESTÃO 9 (0.75 pt) — Nível 4: Avançado (Vista Olhando de Cima)
   {
     id: 9,
     block: 'BLOCK_4_SPATIAL',
-    blockTitle: 'Nível 4 • Projeção Ortográfica',
+    blockTitle: 'Nível 4 • Vista de Cima',
     title: 'Encontre a Vista Superior',
-    visualPrompt: 'Observe e gire o prisma triangular 3D. Qual desenho 2D representa sua vista olhando diretamente de cima?',
+    visualPrompt: 'Observe e gire o prisma triangular 3D. Qual desenho representa a visão deste objeto olhando diretamente de cima?',
     points: 0.75,
     type: 'orthographic_view',
     options: [

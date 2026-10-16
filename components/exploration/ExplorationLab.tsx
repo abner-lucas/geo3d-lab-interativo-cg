@@ -11,12 +11,14 @@ import {
   Info, 
   Sparkles, 
   Compass,
-  Cpu
+  Gamepad2,
+  Home,
+  Shapes
 } from 'lucide-react';
 
 export function ExplorationLab() {
   const [activeSolid, setActiveSolid] = useState<SolidType>('cube');
-  const [activeTab, setActiveTab] = useState<'CONCEPTS' | 'TOPOLOGY' | 'CG_APPLICATIONS'>('CONCEPTS');
+  const [activeTab, setActiveTab] = useState<'SHAPE' | 'DAILY_LIFE' | 'CG_3D'>('SHAPE');
 
   const solidsData: Record<SolidType, {
     name: string;
@@ -25,64 +27,64 @@ export function ExplorationLab() {
     facesCount: number;
     verticesCount: number;
     edgesCount: number;
-    spatialConcept: string;
-    cgApplication: string;
-    eulerFormula: string;
+    shapeDetails: string;
+    dailyLife: string;
+    cgUsage: string;
   }> = {
     cube: {
-      name: 'Hexaedro Regular',
-      category: 'Poliedro Platônico Simétrico',
-      description: 'Sólido tridimensional perfeitamente simétrico nos três eixos espaciais (Largura X, Altura Y e Profundidade Z), com todas as arestas de mesma medida.',
+      name: 'Cubo',
+      category: '6 Faces Quadradas Iguais',
+      description: 'Sólido perfeitamente equilibrado em largura, altura e profundidade, com todos os lados de mesmo tamanho e cantos retos.',
       facesCount: 6,
       verticesCount: 8,
       edgesCount: 12,
-      spatialConcept: 'Possui simetria isométrica nas três dimensões ortogonais, encontrando-se sempre em ângulos retos de 90°.',
-      cgApplication: 'Na Computação Gráfica, é a primitiva fundamental (Voxel / Bounding Box) usada para calcular colisões rápidas e construir mundos em blocos.',
-      eulerFormula: '8 vértices - 12 arestas + 6 faces = 2'
+      shapeDetails: 'Possui 6 faces quadradas idênticas, 12 arestas (linhas) e 8 vértices (cantos). Todas as quinas formam ângulos retos de 90°.',
+      dailyLife: 'É o formato clássico de um dado de jogo de tabuleiro, de uma caixa de presente quadrada e do Cubo Mágico.',
+      cgUsage: 'Em jogos como Minecraft e mundos virtuais em 3D, o cubo é o bloco principal para construir cenários e calcular colisões de personagens.'
     },
     cuboid: {
-      name: 'Bloco Prisma Retangular',
-      category: 'Poliedro Prismático Ortogonal',
-      description: 'Sólido tridimensional cujas dimensões de largura (X), altura (Y) e profundidade (Z) possuem medidas independentes entre si.',
+      name: 'Paralelepípedo',
+      category: 'Bloco de Faces Retangulares',
+      description: 'Sólido com formato de bloco reto alongado, onde lados opostos são exatamente iguais e paralelos entre si.',
       facesCount: 6,
       verticesCount: 8,
       edgesCount: 12,
-      spatialConcept: 'Organiza o volume através de planos paralelos dois a dois, permitindo alongamento direcional em qualquer eixo.',
-      cgApplication: 'Muito empregado na modelagem arquitetônica 3D (edifícios, vigas, mobiliário) e caixas delimitadoras orientadas (OBB).',
-      eulerFormula: '8 vértices - 12 arestas + 6 faces = 2'
+      shapeDetails: 'Possui 6 faces retangulares, 12 arestas e 8 vértices. Suas medidas de largura, altura e comprimento podem ser diferentes.',
+      dailyLife: 'É o formato de uma caixa de sapatos, de um tijolo de construção, de uma esponja de pia ou de um livro fechado.',
+      cgUsage: 'Na modelagem 3D, é a base para criar prédios, paredes de casas, mesas, portas, carros e aparelhos eletrônicos.'
     },
     triangular_prism: {
-      name: 'Prisma de Seção Triangular',
-      category: 'Poliedro Prismático Não-Retangular',
-      description: 'Sólido formado pela projeção espacial reta (extrusão) de um polígono de três lados ao longo de um eixo de profundidade.',
+      name: 'Prisma Triangular',
+      category: 'Bases Triangulares e Lados Retangulares',
+      description: 'Sólido que possui tampa e fundo em formato de triângulo, ligados por três paredes retangulares.',
       facesCount: 5,
       verticesCount: 6,
       edgesCount: 9,
-      spatialConcept: 'Combina planos inclinados convergentes com bases paralelas, desviando feixes de luz em ângulos agudos.',
-      cgApplication: 'Utilizado em motores gráficos para rampas, estruturas de cobertura, refração óptica simulada e malhas low-poly.',
-      eulerFormula: '6 vértices - 9 arestas + 5 faces = 2'
+      shapeDetails: 'Tem 5 faces no total (2 triângulos nas pontas e 3 retângulos nas laterais), 9 arestas e 6 vértices.',
+      dailyLife: 'Lembra o formato de uma barra de chocolate triangular (Toblerone), de uma barraca de camping ou do telhado de duas águas de uma casa.',
+      cgUsage: 'Muito utilizado em jogos para criar rampas de corrida ou skate, telhados de vilarejos e montanhas estilizadas.'
     },
     square_pyramid: {
-      name: 'Poliedro Piramidal',
-      category: 'Sólido de Convergência em Ápice',
-      description: 'Poliedro cujas arestas laterais partem de uma base poligonal plana e convergem para um único vértice superior central (ápice).',
+      name: 'Pirâmide Quadrada',
+      category: 'Base Quadrada com 4 Lados Triangulares',
+      description: 'Sólido que tem um quadrado no chão e quatro lados triangulares que sobem até se unirem em uma única ponta no topo.',
       facesCount: 5,
       verticesCount: 5,
       edgesCount: 8,
-      spatialConcept: 'Apresenta redução progressiva de sua seção transversal conforme a altura (eixo Y) se aproxima do topo.',
-      cgApplication: 'Representa o "Frustum" da câmera virtual 3D (cone de visão que define o que aparece na tela do computador).',
-      eulerFormula: '5 vértices - 8 arestas + 5 faces = 2'
+      shapeDetails: 'Possui 5 faces (1 base quadrada e 4 faces triangulares), 8 arestas e 5 vértices (4 na base e 1 na ponta de cima).',
+      dailyLife: 'É o formato imponente das Pirâmides do Egito, de alguns tipos de barracas e de decorações de mesa.',
+      cgUsage: 'Em computação gráfica, é usada para criar torres de castelos, monumentos históricos, copas pontiagudas de pinheiros e cones de luz.'
     },
     cylinder: {
-      name: 'Sólido Cilíndrico de Revolução',
-      category: 'Corpo Redondo Curvilíneo',
-      description: 'Sólido gerado pela rotação completa (360°) de um segmento reto em torno de um eixo central de simetria vertical.',
+      name: 'Cilindro',
+      category: 'Corpo Redondo com Duas Bases Circulares',
+      description: 'Sólido circular reto com tampa e fundo redondos perfeitamente planos e uma lateral curva contínua, sem cantos.',
       facesCount: 3,
       verticesCount: 0,
       edgesCount: 2,
-      spatialConcept: 'Combina superfícies planas paralelas nas extremidades com uma superfície contínua curva sem quinas laterais.',
-      cgApplication: 'Nas malhas 3D (Three.js/WebGL), superfícies curvas são aproximadas por dezenas de subdivisões poligonais suavizadas por normais (Phong/Gouraud shading).',
-      eulerFormula: 'Corpo redondo de revolução (sem vértices)'
+      shapeDetails: 'Possui 3 superfícies (2 círculos planos e 1 superfície lateral curva contínua) e 2 bordas redondas, sem vértices (pontas).',
+      dailyLife: 'É o formato de uma lata de refrigerante, de um cano de água, de um copo reto, de uma pilha ou de um rolo de papel.',
+      cgUsage: 'Em mundos 3D, é utilizado para modelar rodas, canos, postes de iluminação, colunas de palácios e troncos de árvores.'
     }
   };
 
@@ -101,25 +103,25 @@ export function ExplorationLab() {
             Laboratório 3D de Geometria Espacial
           </h2>
           <p className="text-sm text-slate-600 mt-1">
-            Plataforma de explanação interativa: gire os modelos em 360°, inspecione a topologia espacial e estude suas aplicações na Computação Gráfica.
+            Gire os modelos 3D, observe suas faces, linhas e cantos, e descubra onde cada forma aparece no nosso dia a dia e nos jogos.
           </p>
         </div>
 
         {/* Quick Tips */}
         <div className="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600">
           <Info className="w-4 h-4 text-blue-600 shrink-0" />
-          <span>Arraste na tela 3D para inspecionar luz, sombra, vértices e arestas.</span>
+          <span>Arraste na tela 3D para olhar o objeto de qualquer ângulo.</span>
         </div>
       </div>
 
       {/* Solid Selector Tabs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
         {[
-          { id: 'cube', label: 'Hexaedro Regular', icon: <Box className="w-5 h-5" /> },
-          { id: 'cuboid', label: 'Prisma Retangular', icon: <Layers className="w-5 h-5" /> },
+          { id: 'cube', label: 'Cubo', icon: <Box className="w-5 h-5" /> },
+          { id: 'cuboid', label: 'Paralelepípedo', icon: <Layers className="w-5 h-5" /> },
           { id: 'triangular_prism', label: 'Prisma Triangular', icon: <Triangle className="w-5 h-5" /> },
-          { id: 'square_pyramid', label: 'Poliedro Piramidal', icon: <Triangle className="w-5 h-5 rotate-180" /> },
-          { id: 'cylinder', label: 'Sólido de Revolução', icon: <Cylinder className="w-5 h-5" /> }
+          { id: 'square_pyramid', label: 'Pirâmide Quadrada', icon: <Triangle className="w-5 h-5 rotate-180" /> },
+          { id: 'cylinder', label: 'Cilindro', icon: <Cylinder className="w-5 h-5" /> }
         ].map(item => {
           const isActive = activeSolid === item.id;
           return (
@@ -143,7 +145,7 @@ export function ExplorationLab() {
 
       {/* Main Exploration Workstation */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left: Interactive 3D Canvas (Somente inspeção espacial, sem revelar gabaritos de planificação ou cores da avaliação) */}
+        {/* Left: Interactive 3D Canvas */}
         <div className="lg:col-span-8 flex flex-col gap-3">
           <GeoCanvas
             solidType={activeSolid}
@@ -157,18 +159,18 @@ export function ExplorationLab() {
           <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center gap-4 justify-between">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wide">
               <Compass className="w-4 h-4 text-blue-600" />
-              <span>Eixos do Espaço 3D:</span>
+              <span>Dimensões no Espaço 3D:</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <span className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 font-bold">
-                Eixo X: Largura Horizontal
+                Eixo X: Largura (Direita / Esquerda)
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold">
-                Eixo Y: Altura Vertical
+                Eixo Y: Altura (Cima / Baixo)
               </span>
               <span className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 font-bold">
-                Eixo Z: Profundidade Espacial
+                Eixo Z: Profundidade (Frente / Fundo)
               </span>
             </div>
           </div>
@@ -193,15 +195,15 @@ export function ExplorationLab() {
             <div className="grid grid-cols-3 gap-2 py-1">
               <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
                 <span className="text-xl font-black text-blue-700">{currentSolidInfo.facesCount}</span>
-                <p className="text-[10px] font-bold text-blue-900 uppercase">Superfícies</p>
+                <p className="text-[10px] font-bold text-blue-900 uppercase">Faces (Lados)</p>
               </div>
               <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
                 <span className="text-xl font-black text-emerald-700">{currentSolidInfo.edgesCount}</span>
-                <p className="text-[10px] font-bold text-emerald-900 uppercase">Arestas</p>
+                <p className="text-[10px] font-bold text-emerald-900 uppercase">Arestas (Linhas)</p>
               </div>
               <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-center">
                 <span className="text-xl font-black text-purple-700">{currentSolidInfo.verticesCount}</span>
-                <p className="text-[10px] font-bold text-purple-900 uppercase">Vértices</p>
+                <p className="text-[10px] font-bold text-purple-900 uppercase">Vértices (Pontas)</p>
               </div>
             </div>
 
@@ -209,63 +211,56 @@ export function ExplorationLab() {
             <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 text-[11px] font-bold">
               <button
                 type="button"
-                onClick={() => setActiveTab('CONCEPTS')}
-                className={`py-1.5 px-2 rounded-lg transition cursor-pointer ${
-                  activeTab === 'CONCEPTS' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                onClick={() => setActiveTab('SHAPE')}
+                className={`py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
+                  activeTab === 'SHAPE' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Geometria
+                <Shapes className="w-3 h-3" />
+                <span>Forma</span>
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('TOPOLOGY')}
-                className={`py-1.5 px-2 rounded-lg transition cursor-pointer ${
-                  activeTab === 'TOPOLOGY' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                onClick={() => setActiveTab('DAILY_LIFE')}
+                className={`py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
+                  activeTab === 'DAILY_LIFE' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Euler (V-A+F)
+                <Home className="w-3 h-3" />
+                <span>No Dia a Dia</span>
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('CG_APPLICATIONS')}
-                className={`py-1.5 px-2 rounded-lg transition cursor-pointer ${
-                  activeTab === 'CG_APPLICATIONS' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                onClick={() => setActiveTab('CG_3D')}
+                className={`py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
+                  activeTab === 'CG_3D' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Uso em 3D
+                <Gamepad2 className="w-3 h-3" />
+                <span>Nos Jogos 3D</span>
               </button>
             </div>
 
             {/* Tab Content */}
             <div className="space-y-2.5 text-xs border-t border-slate-100 pt-3">
-              {activeTab === 'CONCEPTS' && (
+              {activeTab === 'SHAPE' && (
                 <div>
-                  <span className="font-bold text-slate-800">Estrutura no Espaço 3D:</span>
-                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.spatialConcept}</p>
+                  <span className="font-bold text-slate-800">Como é a forma deste sólido:</span>
+                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.shapeDetails}</p>
                 </div>
               )}
 
-              {activeTab === 'TOPOLOGY' && (
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="font-bold text-slate-800 text-[11px] block mb-1">
-                    Teorema Topológico de Euler (V - A + F = 2):
-                  </span>
-                  <p className="text-blue-700 text-xs font-mono font-bold">
-                    {currentSolidInfo.eulerFormula}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
-                    Em todo poliedro convexo fechado, o número de Vértices menos Arestas mais Faces é constante e igual a 2.
-                  </p>
+              {activeTab === 'DAILY_LIFE' && (
+                <div>
+                  <span className="font-bold text-slate-800">Onde encontramos no dia a dia:</span>
+                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.dailyLife}</p>
                 </div>
               )}
 
-              {activeTab === 'CG_APPLICATIONS' && (
+              {activeTab === 'CG_3D' && (
                 <div>
-                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-blue-600" />
-                    Aplicação em Computação Gráfica:
-                  </span>
-                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.cgApplication}</p>
+                  <span className="font-bold text-slate-800">Como é usado em jogos e filmes 3D:</span>
+                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.cgUsage}</p>
                 </div>
               )}
             </div>
