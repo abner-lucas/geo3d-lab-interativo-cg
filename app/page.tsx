@@ -27,6 +27,7 @@ type ActiveView =
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<ActiveView>('STUDENT_LOGIN');
+  const [isTeacherAuthenticated, setIsTeacherAuthenticated] = useState<boolean>(false);
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
   const [activeAttempt, setActiveAttempt] = useState<Attempt | null>(null);
   const [assessmentMode, setAssessmentMode] = useState<AssessmentMode>('EVALUATION');
@@ -125,10 +126,9 @@ export default function HomePage() {
               onClick={() => {
                 if (activeView === 'STUDENT_ASSESSMENT') {
                   if (confirm('Ir para o painel docente? Sua tentativa atual está salva.')) {
-                    setActiveView('TEACHER_AUTH');
+                    setActiveView(isTeacherAuthenticated ? 'TEACHER_DASHBOARD' : 'TEACHER_AUTH');
                   }
-                } else if (activeView === 'TEACHER_DASHBOARD') {
-                  // Already authenticated
+                } else if (isTeacherAuthenticated) {
                   setActiveView('TEACHER_DASHBOARD');
                 } else {
                   setActiveView('TEACHER_AUTH');
@@ -184,7 +184,10 @@ export default function HomePage() {
         {activeView === 'TEACHER_AUTH' && (
           <div className="py-12">
             <TeacherAuth
-              onSuccess={() => setActiveView('TEACHER_DASHBOARD')}
+              onSuccess={() => {
+                setIsTeacherAuthenticated(true);
+                setActiveView('TEACHER_DASHBOARD');
+              }}
               onCancel={() => setActiveView('STUDENT_LOGIN')}
             />
           </div>
@@ -193,7 +196,13 @@ export default function HomePage() {
         {/* 5. TEACHER DASHBOARD */}
         {activeView === 'TEACHER_DASHBOARD' && (
           <div className="py-4">
-            <TeacherDashboard onBackToHome={() => setActiveView('STUDENT_LOGIN')} />
+            <TeacherDashboard
+              onBackToHome={() => setActiveView('STUDENT_LOGIN')}
+              onLogout={() => {
+                setIsTeacherAuthenticated(false);
+                setActiveView('STUDENT_LOGIN');
+              }}
+            />
           </div>
         )}
       </main>

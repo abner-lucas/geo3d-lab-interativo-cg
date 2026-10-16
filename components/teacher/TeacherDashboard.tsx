@@ -23,14 +23,16 @@ import {
   ShieldAlert,
   ArrowLeft,
   Trash2,
-  Pencil
+  Pencil,
+  LogOut
 } from 'lucide-react';
 
 interface TeacherDashboardProps {
   onBackToHome: () => void;
+  onLogout?: () => void;
 }
 
-export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
+export function TeacherDashboard({ onBackToHome, onLogout }: TeacherDashboardProps) {
   const [classes, setClasses] = useState<ClassRoom[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [students, setStudents] = useState<Student[]>([]);
@@ -544,6 +546,22 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
           >
             <Download className="w-4 h-4" />
             <span>Exportar CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (confirm('Deseja realmente encerrar a sessão docente?')) {
+                if (onLogout) onLogout();
+                else onBackToHome();
+              }
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-700 text-xs font-bold transition shadow-xs cursor-pointer"
+            title="Encerrar Sessão Docente"
+            aria-label="Encerrar Sessão Docente"
+          >
+            <LogOut className="w-4 h-4 text-rose-600" />
+            <span>Encerrar Sessão</span>
           </button>
         </div>
       </div>
