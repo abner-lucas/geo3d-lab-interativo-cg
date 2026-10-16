@@ -348,10 +348,10 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
             </span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            Acompanhamento da 3ª Avaliação
+            Acompanhamento de Atividades
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Computação Gráfica • Turma e Resultados Individuais
+            Computação Gráfica • Prof. Me. Ábner Lucas
           </p>
         </div>
 
@@ -781,7 +781,7 @@ export function TeacherDashboard({ onBackToHome }: TeacherDashboardProps) {
               <input
                 type="text"
                 required
-                placeholder="Ex: 3º Ano Informática B"
+                placeholder="Ex: Turma Computação Gráfica A"
                 value={newClassName}
                 onChange={(e) => setNewClassName(e.target.value)}
                 className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold"

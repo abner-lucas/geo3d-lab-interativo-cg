@@ -1,6 +1,6 @@
 # Geo3D — Laboratório Interativo de Computação Gráfica
 
-Aplicação web completa, moderna e acessível desenvolvida para a **3ª Avaliação da disciplina de Computação Gráfica** do curso Técnico em Informática Integrado ao Ensino Médio.
+Aplicação web completa, moderna e acessível desenvolvida para as atividades práticas de **Computação Gráfica**, coordenada e orientada pelo **Prof. Me. Ábner Lucas**.
 
 ---
 

@@ -19,3 +19,4 @@ BEGIN
     DROP POLICY IF EXISTS "Permitir operacoes de auditoria" ON audit_logs;
     CREATE POLICY "Permitir operacoes de auditoria" ON audit_logs FOR ALL USING (true);
 END $$;
+

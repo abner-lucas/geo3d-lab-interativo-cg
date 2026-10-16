@@ -144,8 +144,8 @@ CREATE POLICY "Respostas registradas por tentativa"
 INSERT INTO assessments (id, code, title, description, max_score, is_active)
 VALUES (
     'a0000000-0000-0000-0000-000000000001',
-    'GEO-3AVAL-2026', 
-    '3ª Avaliação de Computação Gráfica — 2D, Planificações e Sólidos 3D', 
+    'GEO-CG-2026', 
+    'Laboratório de Computação Gráfica — 2D, Planificações e Sólidos 3D', 
     'Avaliação interativa e acessível com 10 questões práticas.', 
     10.00, 
     true
@@ -155,8 +155,8 @@ VALUES (
 INSERT INTO teachers (id, name, email, role)
 VALUES (
     '10000000-0000-0000-0000-000000000001',
-    'Prof. Marcos Rocha',
-    'prof@geo3d.edu.br',
+    'Prof. Me. Ábner Lucas',
+    'abner.lucas@geo3d.edu.br',
     'teacher'
 ) ON CONFLICT (email) DO NOTHING;
 
@@ -165,8 +165,8 @@ INSERT INTO classes (id, teacher_id, code, name, year_period, is_assessment_acti
 VALUES (
     '20000000-0000-0000-0000-000000000001',
     '10000000-0000-0000-0000-000000000001',
-    'TURMA-INFO3',
-    '3º Ano Informática Integrado - Manhã',
+    'TURMA-CG',
+    'Turma de Computação Gráfica',
     '2026.1',
     true
 ) ON CONFLICT (code) DO NOTHING;

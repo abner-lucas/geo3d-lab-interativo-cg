@@ -59,7 +59,7 @@ export function StudentLogin({
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 mb-3 border border-blue-200">
           <Layers className="w-4 h-4 text-blue-600" />
-          <span>3ª AVALIAÇÃO • COMPUTAÇÃO GRÁFICA</span>
+          <span>COMPUTAÇÃO GRÁFICA • PROF. ME. ÁBNER LUCAS</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
           Geo3D

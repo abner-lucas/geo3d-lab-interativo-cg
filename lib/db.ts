@@ -8,16 +8,16 @@ import { gradeStudentAnswer, QUESTIONS } from './questions';
 
 export const DEFAULT_TEACHER: TeacherUser = {
   id: '10000000-0000-0000-0000-000000000001',
-  name: 'Prof. Marcos Rocha',
-  email: 'prof@geo3d.edu.br',
+  name: 'Prof. Me. Ábner Lucas',
+  email: 'abner.lucas@geo3d.edu.br',
   role: 'teacher'
 };
 
 const DEFAULT_CLASS: ClassRoom = {
   id: '20000000-0000-0000-0000-000000000001',
   teacherId: '10000000-0000-0000-0000-000000000001',
-  code: 'TURMA-INFO3',
-  name: '3º Ano Informática Integrado - Manhã',
+  code: 'TURMA-CG',
+  name: 'Turma de Computação Gráfica',
   yearPeriod: '2026.1',
   isAssessmentActive: true,
   studentCount: 4,

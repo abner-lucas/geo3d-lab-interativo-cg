@@ -68,11 +68,11 @@ export default function HomePage() {
               <div className="flex items-center gap-1.5">
                 <span className="font-black text-lg text-slate-900 tracking-tight">Geo3D</span>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 uppercase">
-                  3ª Avaliação
+                  Computação Gráfica
                 </span>
               </div>
               <p className="text-[11px] text-slate-600 font-medium hidden sm:block">
-                Laboratório de Computação Gráfica
+                Prof. Me. Ábner Lucas
               </p>
             </div>
           </button>
@@ -206,7 +206,9 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-700">Geo3D</span>
             <span>•</span>
-            <span>Ensino Médio Técnico Integrado em Informática</span>
+            <span>Laboratório de Computação Gráfica</span>
+            <span>•</span>
+            <span className="font-semibold text-slate-700">Prof. Me. Ábner Lucas</span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
