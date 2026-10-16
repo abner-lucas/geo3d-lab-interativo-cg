@@ -19,7 +19,7 @@ export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
     if (clean === 'PROF-2026' || clean === 'geo3d' || clean === '123456') {
       onSuccess();
     } else {
-      setError('Código docente inválido. Utilize PROF-2026 para demonstração.');
+      setError('Código de acesso docente inválido.');
     }
   };
 
@@ -62,7 +62,7 @@ export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
               </div>
               <input
                 type="password"
-                placeholder="Ex: PROF-2026"
+                placeholder="Digite a senha docente"
                 value={passcode}
                 onChange={(e) => {
                   setPasscode(e.target.value);
@@ -82,19 +82,6 @@ export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
-
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-          <span className="text-[11px] text-slate-500 block font-medium">
-            Código padrão de demonstração:
-          </span>
-          <button
-            type="button"
-            onClick={() => setPasscode('PROF-2026')}
-            className="font-mono text-xs font-bold text-blue-600 hover:underline mt-0.5"
-          >
-            PROF-2026
-          </button>
-        </div>
       </div>
     </div>
   );

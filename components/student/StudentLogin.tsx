@@ -19,12 +19,6 @@ export function StudentLogin({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const sampleCodes = [
-    { code: 'GEO-ALUNA-01', label: 'Estudante 01 (Luiza)' },
-    { code: 'GEO-ALUNO-02', label: 'Estudante 02 (Gabriel)' },
-    { code: 'GEO-ALUNA-03', label: 'Estudante 03 (Sofia)' }
-  ];
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessCode.trim()) {
@@ -151,28 +145,6 @@ export function StudentLogin({
             <ArrowRight className="w-5 h-5" />
           </button>
         </form>
-
-        {/* Fast Demonstration Codes */}
-        <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            Códigos de demonstração rápida:
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {sampleCodes.map((item) => (
-              <button
-                key={item.code}
-                type="button"
-                onClick={() => {
-                  setAccessCode(item.code);
-                  setErrorMessage('');
-                }}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-mono text-xs font-semibold transition"
-              >
-                {item.code}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Alternative Bottom Pathways */}
