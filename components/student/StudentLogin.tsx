@@ -75,32 +75,44 @@ export function StudentLogin({
       {/* Main Login Card */}
       <div className="w-full bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex flex-col gap-6">
         {/* Mode Selector (Avaliação vs Treino) */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
-          <button
-            type="button"
-            onClick={() => setSelectedMode('EVALUATION')}
-            className={`py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
-              selectedMode === 'EVALUATION'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>MODO AVALIAÇÃO</span>
-          </button>
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setSelectedMode('EVALUATION')}
+              className={`py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
+                selectedMode === 'EVALUATION'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>MODO AVALIAÇÃO</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setSelectedMode('PRACTICE')}
-            className={`py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
-              selectedMode === 'PRACTICE'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>MODO TREINO</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setSelectedMode('PRACTICE')}
+              className={`py-2.5 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
+                selectedMode === 'PRACTICE'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>MODO TREINO (TOUR)</span>
+            </button>
+          </div>
+
+          <p className={`text-[11px] font-semibold text-center px-3 py-1.5 rounded-xl border ${
+            selectedMode === 'EVALUATION'
+              ? 'bg-blue-50/70 text-blue-800 border-blue-100'
+              : 'bg-emerald-50/70 text-emerald-800 border-emerald-100'
+          }`}>
+            {selectedMode === 'EVALUATION'
+              ? 'Atividade avaliativa oficial: 10 questões em ordem crescente de complexidade.'
+              : 'Tutorial rápido: apenas 3 passos simples para aprender a usar a plataforma antes da avaliação.'}
+          </p>
         </div>
 
         {/* Input Form */}

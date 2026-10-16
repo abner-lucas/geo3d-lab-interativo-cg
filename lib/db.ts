@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Student, ClassRoom, Attempt, AuditLog, TeacherUser } from '@/types/geo3d';
-import { gradeStudentAnswer, QUESTIONS } from './questions';
+import { gradeStudentAnswer, QUESTIONS, PRACTICE_QUESTIONS } from './questions';
 
 // ==========================================
 // FALLBACK IN-MEMORY SEEDS (Usado se Supabase não configurado)
@@ -185,8 +185,14 @@ export async function getOrCreateStudentAttempt(
         .order('started_at', { ascending: false });
 
       if (existingAttempts && existingAttempts.length > 0) {
-        // Se já tiver uma em progresso, retorne-a
-        const inProgress = existingAttempts.find(a => a.status === 'IN_PROGRESS');
+        // Se já tiver uma em progresso compatível com o modo atual, retorne-a
+        const inProgress = existingAttempts.find(a => {
+          if (a.status !== 'IN_PROGRESS') return false;
+          if (mode === 'PRACTICE' && Array.isArray(a.responses) && a.responses.some((r: any) => Number(r.question_id) < 100)) {
+            return false;
+          }
+          return true;
+        });
         if (inProgress) {
           const mapped = mapAttemptFromDb(inProgress, student.pseudonym, student.accessCode, student.classId);
           attemptsDb[mapped.id] = mapped;
@@ -276,7 +282,7 @@ export async function saveStudentAnswer(
   interactionType: string = 'click'
 ): Promise<{ success: boolean; attempt: Attempt; scoreEarned: number; isCorrect: boolean }> {
   const { isCorrect, score } = gradeStudentAnswer(questionId, answerData);
-  const qDef = QUESTIONS.find(q => q.id === questionId);
+  const qDef = [...QUESTIONS, ...PRACTICE_QUESTIONS].find(q => q.id === questionId);
   const blockId = qDef?.block || 'BLOCK_1_RECOGNITION';
   const pointsPossible = qDef?.points || 1.0;
 

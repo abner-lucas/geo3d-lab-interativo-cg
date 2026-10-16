@@ -1,26 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Attempt, QuestionDef, Student, AssessmentMode } from '@/types/geo3d';
-import { QUESTIONS, QUESTION_BLOCKS } from '@/lib/questions';
+import { getQuestionsByMode, QUESTION_BLOCKS } from '@/lib/questions';
 import { QuestionRenderer } from '@/components/assessment/QuestionRenderer';
 import confetti from 'canvas-confetti';
 import { 
   ArrowLeft, 
   ArrowRight, 
   CheckCircle2, 
-  Clock, 
-  Sparkles, 
   Video, 
-  Eye, 
-  RotateCcw, 
   Send, 
   Check, 
-  AlertCircle,
-  HelpCircle,
-  Shield,
-  Layers,
-  Award
+  Award,
+  BookOpen
 } from 'lucide-react';
 
 interface StudentAssessmentViewProps {
@@ -39,6 +32,9 @@ function isQuestionAnswered(questionId: number, ans: any): boolean {
   if (questionId === 10) {
     return Boolean(ans.basePiece && ans.roofPiece);
   }
+  if (questionId === 103) {
+    return Boolean(ans.leftSlot && ans.rightSlot);
+  }
   return Boolean(ans.selectedOption);
 }
 
@@ -49,6 +45,10 @@ export function StudentAssessmentView({
   onExit,
   onAttemptChange
 }: StudentAssessmentViewProps) {
+  const activeQuestions = getQuestionsByMode(mode);
+  const totalQuestionsCount = activeQuestions.length;
+  const isPractice = mode === 'PRACTICE';
+
   const [attempt, setAttempt] = useState<Attempt>(initialAttempt);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [localAnswers, setLocalAnswers] = useState<Record<number, any>>(() => {
@@ -72,7 +72,7 @@ export function StudentAssessmentView({
     initialAttempt.status === 'SUBMITTED' || initialAttempt.status === 'REVIEWED'
   );
 
-  const currentQ: QuestionDef = QUESTIONS[currentQuestionIndex];
+  const currentQ: QuestionDef = activeQuestions[currentQuestionIndex] || activeQuestions[0];
   const currentAnswer = localAnswers[currentQ.id];
   const blockInfo = QUESTION_BLOCKS[currentQ.block];
 
@@ -105,14 +105,14 @@ export function StudentAssessmentView({
       } else {
         setSaveStatus('Erro ao salvar');
       }
-    } catch (err) {
+    } catch {
       setSaveStatus('Erro na conexão');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Finalize assessment
+  // Finalize assessment or tour
   const handleFinishAssessment = async () => {
     try {
       setIsSaving(true);
@@ -129,7 +129,6 @@ export function StudentAssessmentView({
         setAssessmentFinished(true);
         setShowFinishConfirm(false);
 
-        // Celebration confetti for student (unless reduced motion is enabled)
         if (!reducedMotion && !document.body.classList.contains('reduced-motion')) {
           try {
             confetti({
@@ -140,8 +139,8 @@ export function StudentAssessmentView({
           } catch {}
         }
       }
-    } catch (err) {
-      alert('Não foi possível finalizar a avaliação. Tente novamente.');
+    } catch {
+      alert('Não foi possível finalizar a atividade. Tente novamente.');
     } finally {
       setIsSaving(false);
     }
@@ -158,8 +157,7 @@ export function StudentAssessmentView({
     }
   };
 
-  const answeredCount = QUESTIONS.filter(q => isQuestionAnswered(q.id, localAnswers[q.id])).length;
-  const isCurrentAnswered = isQuestionAnswered(currentQ.id, currentAnswer);
+  const answeredCount = activeQuestions.filter(q => isQuestionAnswered(q.id, localAnswers[q.id])).length;
 
   // -------------------------------------------------------------------------
   // FINAL SUBMITTED SCREEN
@@ -172,15 +170,17 @@ export function StudentAssessmentView({
         </div>
 
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
-          <Award className="w-4 h-4" />
-          AVALIAÇÃO CONCLUÍDA COM SUCESSO
+          {isPractice ? <BookOpen className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+          {isPractice ? 'TOUR DE TREINO CONCLUÍDO' : 'AVALIAÇÃO CONCLUÍDA COM SUCESSO'}
         </span>
 
         <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
           Parabéns, {student.pseudonym}!
         </h1>
         <p className="text-sm text-slate-600 max-w-lg mb-8">
-          Todas as suas respostas foram salvas no sistema e enviadas para o professor com sucesso.
+          {isPractice
+            ? 'Você concluiu os 3 passos do Tour de Ambientação! Agora você já sabe selecionar alternativas, girar objetos 3D e preencher espaços para realizar o Modo Avaliação.'
+            : 'Todas as suas respostas foram salvas no sistema e enviadas para o professor com sucesso.'}
         </p>
 
         {/* Results Card */}
@@ -191,26 +191,36 @@ export function StudentAssessmentView({
               <p className="font-mono font-bold text-base text-slate-800">{student.accessCode}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-slate-500 font-bold uppercase">Questões Registradas</p>
-              <p className="font-bold text-base text-blue-600">{answeredCount} de 10</p>
+              <p className="text-xs text-slate-500 font-bold uppercase">
+                {isPractice ? 'Passos do Tour' : 'Questões Registradas'}
+              </p>
+              <p className="font-bold text-base text-blue-600">
+                {answeredCount} de {totalQuestionsCount}
+              </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between">
-            <span className="font-bold text-sm text-blue-900">Nota Total da Avaliação:</span>
-            <span className="text-2xl font-black text-blue-700">
+          <div className={`p-4 rounded-xl border flex items-center justify-between ${
+            isPractice ? 'bg-emerald-50 border-emerald-200' : 'bg-blue-50 border-blue-200'
+          }`}>
+            <span className={`font-bold text-sm ${isPractice ? 'text-emerald-900' : 'text-blue-900'}`}>
+              {isPractice ? 'Pontuação no Tour de Treino:' : 'Nota Total da Avaliação:'}
+            </span>
+            <span className={`text-2xl font-black ${isPractice ? 'text-emerald-700' : 'text-blue-700'}`}>
               {attempt.scoreAdjusted ?? attempt.totalScore} / 10,0
             </span>
           </div>
 
           <p className="text-xs text-slate-500 mt-4 text-center">
-            O professor já tem acesso ao seu resultado e às análises de cada sólido no painel.
+            {isPractice
+              ? 'Este resultado é apenas para seu treinamento e não altera sua nota oficial na disciplina.'
+              : 'O professor já tem acesso ao seu resultado e às análises de cada sólido no painel.'}
           </p>
         </div>
 
         <button
           onClick={onExit}
-          className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition shadow-xs"
+          className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition shadow-xs cursor-pointer"
         >
           Voltar para a Tela Inicial
         </button>
@@ -226,7 +236,9 @@ export function StudentAssessmentView({
       <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
         {/* Student Pseudonym & Code */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-xs">
+          <div className={`w-10 h-10 rounded-xl text-white font-black flex items-center justify-center text-sm shadow-xs ${
+            isPractice ? 'bg-emerald-600' : 'bg-blue-600'
+          }`}>
             {student.displayNumber}
           </div>
           <div>
@@ -237,12 +249,12 @@ export function StudentAssessmentView({
               </span>
               <span
                 className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                  mode === 'EVALUATION'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-emerald-100 text-emerald-800'
+                  isPractice
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-blue-100 text-blue-800'
                 }`}
               >
-                {mode === 'EVALUATION' ? 'Modo Avaliação' : 'Modo Treino'}
+                {isPractice ? 'Modo Treino (Tour 3 Passos)' : 'Modo Avaliação'}
               </span>
             </div>
             <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
@@ -257,7 +269,7 @@ export function StudentAssessmentView({
           {/* Libras Video Button */}
           <button
             onClick={() => setShowLibrasPanel(!showLibrasPanel)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition border ${
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${
               showLibrasPanel 
                 ? 'bg-blue-600 text-white border-blue-600' 
                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -272,7 +284,7 @@ export function StudentAssessmentView({
           {/* Reduced Motion Toggle */}
           <button
             onClick={toggleReducedMotion}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition border ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition border cursor-pointer ${
               reducedMotion
                 ? 'bg-amber-100 text-amber-800 border-amber-300'
                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -286,7 +298,7 @@ export function StudentAssessmentView({
           {/* Exit / Menu */}
           <button
             onClick={onExit}
-            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
           >
             Sair
           </button>
@@ -306,31 +318,36 @@ export function StudentAssessmentView({
               <h4 className="font-bold text-sm text-white">Mediação em Língua Brasileira de Sinais (Libras)</h4>
             </div>
             <p className="text-xs text-blue-200 leading-relaxed">
-              Espaço reservado para vídeos reais de mediação em Libras cadastrados pelo professor para a Questão {currentQ.id}.
+              Espaço reservado para vídeos reais de mediação em Libras cadastrados pelo professor para {isPractice ? `o Passo ${currentQuestionIndex + 1} do Tour` : `a Questão ${currentQ.id}`}.
             </p>
           </div>
 
           <div className="w-64 h-36 bg-slate-900 rounded-xl border border-blue-800 flex flex-col items-center justify-center p-3 text-center">
             <Video className="w-8 h-8 text-blue-400 mb-2" />
-            <p className="text-xs font-semibold text-slate-300">Vídeo de Apoio da Questão {currentQ.id}</p>
+            <p className="text-xs font-semibold text-slate-300">
+              Vídeo de Apoio — {isPractice ? `Passo ${currentQuestionIndex + 1}` : `Questão ${currentQ.id}`}
+            </p>
             <span className="text-[10px] text-blue-400 mt-1">Carregado pelo professor</span>
           </div>
         </div>
       )}
 
       {/* ------------------------------------------------------------------- */}
-      {/* VISUAL QUESTION STEPPER (1 a 10) */}
+      {/* VISUAL QUESTION STEPPER (3 no Treino / 10 na Avaliação) */}
       {/* ------------------------------------------------------------------- */}
       <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col gap-3">
         <div className="flex items-center justify-between text-xs font-bold text-slate-600">
-          <span>PROGRESSO DA AVALIAÇÃO</span>
-          <span className="text-blue-600">{answeredCount} de 10 respondidas</span>
+          <span>{isPractice ? 'PROGRESSO DO TOUR DE TREINO (TUTORIAL)' : 'PROGRESSO DA AVALIAÇÃO (COMPLEXIDADE CRESCENTE)'}</span>
+          <span className={isPractice ? 'text-emerald-600' : 'text-blue-600'}>
+            {answeredCount} de {totalQuestionsCount} {isPractice ? 'passos concluídos' : 'respondidas'}
+          </span>
         </div>
 
-        <div className="grid grid-cols-10 gap-1.5 sm:gap-2">
-          {QUESTIONS.map((q, idx) => {
+        <div className={`grid gap-1.5 sm:gap-2 ${isPractice ? 'grid-cols-3' : 'grid-cols-10'}`}>
+          {activeQuestions.map((q, idx) => {
             const isAnswered = isQuestionAnswered(q.id, localAnswers[q.id]);
             const isCurrent = idx === currentQuestionIndex;
+            const displayStep = idx + 1;
 
             return (
               <button
@@ -338,14 +355,16 @@ export function StudentAssessmentView({
                 onClick={() => setCurrentQuestionIndex(idx)}
                 className={`py-2 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                   isCurrent
-                    ? 'bg-blue-600 text-white ring-2 ring-blue-300 shadow-sm'
+                    ? isPractice
+                      ? 'bg-emerald-600 text-white ring-2 ring-emerald-300 shadow-sm'
+                      : 'bg-blue-600 text-white ring-2 ring-blue-300 shadow-sm'
                     : isAnswered
                     ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                     : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
-                aria-label={`Ir para questão ${q.id}`}
+                aria-label={`Ir para ${isPractice ? `passo ${displayStep}` : `questão ${displayStep}`}`}
               >
-                <span>{q.id}</span>
+                <span>{isPractice ? `Passo ${displayStep}` : displayStep}</span>
                 {isAnswered && !isCurrent && (
                   <Check className="w-2.5 h-2.5 text-emerald-700" />
                 )}
@@ -362,11 +381,13 @@ export function StudentAssessmentView({
         {/* Question Header & Command */}
         <div className="flex flex-col gap-2 pb-4 border-b border-slate-100">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-              {blockInfo.title} • {currentQ.points.toFixed(2)} pts
+            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
+              isPractice ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'
+            }`}>
+              {isPractice ? currentQ.blockTitle : `${blockInfo.title} • ${currentQ.points.toFixed(2)} pts`}
             </span>
             <span className="text-xs font-bold text-slate-500">
-              Questão {currentQ.id} de 10
+              {isPractice ? `Passo ${currentQuestionIndex + 1} de ${totalQuestionsCount}` : `Questão ${currentQuestionIndex + 1} de ${totalQuestionsCount}`}
             </span>
           </div>
 
@@ -375,7 +396,7 @@ export function StudentAssessmentView({
           </h2>
 
           <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-blue-600 shrink-0" />
+            <div className={`w-3 h-3 rounded-full shrink-0 ${isPractice ? 'bg-emerald-600' : 'bg-blue-600'}`} />
             <p className="text-sm font-semibold text-slate-800">
               {currentQ.visualPrompt}
             </p>
@@ -405,25 +426,27 @@ export function StudentAssessmentView({
             <span>Anterior</span>
           </button>
 
-          {/* Middle: Save Status & Review all */}
+          {/* Middle: Review all */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setShowReviewModal(true)}
-              className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition"
+              className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
             >
-              Revisar Todas
+              {isPractice ? 'Ver Passos do Tour' : 'Revisar Todas'}
             </button>
           </div>
 
           {/* Next or Finish Button */}
-          {currentQuestionIndex < QUESTIONS.length - 1 ? (
+          {currentQuestionIndex < totalQuestionsCount - 1 ? (
             <button
               type="button"
-              onClick={() => setCurrentQuestionIndex(prev => Math.min(QUESTIONS.length - 1, prev + 1))}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition shadow-xs cursor-pointer"
+              onClick={() => setCurrentQuestionIndex(prev => Math.min(totalQuestionsCount - 1, prev + 1))}
+              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm transition shadow-xs cursor-pointer ${
+                isPractice ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
-              <span>Próxima</span>
+              <span>{isPractice ? 'Próximo Passo' : 'Próxima'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
@@ -433,7 +456,7 @@ export function StudentAssessmentView({
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition shadow-xs cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>FINALIZAR AVALIAÇÃO</span>
+              <span>{isPractice ? 'CONCLUIR TOUR DE TREINO' : 'FINALIZAR AVALIAÇÃO'}</span>
             </button>
           )}
         </div>
@@ -447,7 +470,7 @@ export function StudentAssessmentView({
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-lg font-black text-slate-900">
-                Resumo de Questões Respondidas
+                {isPractice ? 'Resumo do Tour de Treino' : 'Resumo de Questões Respondidas'}
               </h3>
               <button
                 onClick={() => setShowReviewModal(false)}
@@ -457,9 +480,10 @@ export function StudentAssessmentView({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 max-h-72 overflow-y-auto p-1">
-              {QUESTIONS.map((q, idx) => {
+            <div className={`grid gap-3 max-h-72 overflow-y-auto p-1 ${isPractice ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-5'}`}>
+              {activeQuestions.map((q, idx) => {
                 const answered = isQuestionAnswered(q.id, localAnswers[q.id]);
+                const stepNum = idx + 1;
                 return (
                   <button
                     key={q.id}
@@ -467,13 +491,13 @@ export function StudentAssessmentView({
                       setCurrentQuestionIndex(idx);
                       setShowReviewModal(false);
                     }}
-                    className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition ${
+                    className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition cursor-pointer ${
                       answered
                         ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
                         : 'border-amber-300 bg-amber-50 text-amber-800'
                     }`}
                   >
-                    <span className="font-black text-base">Q{q.id}</span>
+                    <span className="font-black text-base">{isPractice ? `Passo ${stepNum}` : `Q${stepNum}`}</span>
                     <span className="text-[10px] font-bold uppercase">
                       {answered ? 'Respondida' : 'Pendente'}
                     </span>
@@ -484,7 +508,7 @@ export function StudentAssessmentView({
 
             <div className="flex items-center justify-between pt-3 border-t border-slate-100">
               <span className="text-xs text-slate-600 font-medium">
-                {answeredCount} de 10 respondidas
+                {answeredCount} de {totalQuestionsCount} {isPractice ? 'passos concluídos' : 'respondidas'}
               </span>
               <button
                 onClick={() => setShowReviewModal(false)}
@@ -509,10 +533,12 @@ export function StudentAssessmentView({
 
             <div>
               <h3 className="text-xl font-black text-slate-900 mb-1">
-                Finalizar e Entregar Avaliação?
+                {isPractice ? 'Concluir Tour de Treino?' : 'Finalizar e Entregar Avaliação?'}
               </h3>
               <p className="text-xs text-slate-600">
-                Você respondeu {answeredCount} de 10 questões. Deseja registrar suas respostas definitivas para o professor?
+                {isPractice
+                  ? `Você completou ${answeredCount} de ${totalQuestionsCount} passos do tutorial. Deseja finalizar seu tour de ambientação?`
+                  : `Você respondeu ${answeredCount} de ${totalQuestionsCount} questões. Deseja registrar suas respostas definitivas para o professor?`}
               </p>
             </div>
 
@@ -520,7 +546,7 @@ export function StudentAssessmentView({
               <button
                 type="button"
                 onClick={() => setShowFinishConfirm(false)}
-                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
+                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition cursor-pointer"
               >
                 Continuar Revisando
               </button>
@@ -528,7 +554,7 @@ export function StudentAssessmentView({
                 type="button"
                 disabled={isSaving}
                 onClick={handleFinishAssessment}
-                className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? 'Enviando...' : 'Confirmar e Enviar'}
               </button>
