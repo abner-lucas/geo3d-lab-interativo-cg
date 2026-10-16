@@ -29,7 +29,7 @@ export const QUESTION_BLOCKS: Record<QuestionBlock, { title: string; maxScore: n
 };
 
 // ============================================================================
-// MODO TREINO (TOUR / TUTORIAL DE AMBIENTAÇÃO — APENAS 3 QUESTÕES SIMPLES)
+// MODO TREINO (TUTORIAL DE AMBIENTAÇÃO — APENAS 3 QUESTÕES SIMPLES)
 // Totalmente distintas das questões do Modo Avaliação, focadas em ensinar a
 // mecânica de uso da plataforma (clique, rotação 3D e preenchimento de lacunas).
 // ============================================================================
@@ -38,8 +38,8 @@ export const PRACTICE_QUESTIONS: QuestionDef[] = [
     id: 101,
     block: 'BLOCK_1_RECOGNITION',
     blockTitle: 'Passo 1 de 3 • Tutorial de Seleção',
-    title: 'Tour 1: Como selecionar uma resposta',
-    visualPrompt: 'Bem-vindo ao Tour! Para aprender a marcar uma alternativa, clique no cartão que mostra uma LINHA RETA.',
+    title: 'Treino 1: Como selecionar uma resposta',
+    visualPrompt: 'Bem-vindo ao Treino! Para aprender a marcar uma alternativa, clique no cartão que mostra uma LINHA RETA.',
     points: 3.0,
     type: 'select_single',
     options: [
@@ -52,7 +52,7 @@ export const PRACTICE_QUESTIONS: QuestionDef[] = [
     id: 102,
     block: 'BLOCK_3_FOLDING',
     blockTitle: 'Passo 2 de 3 • Tutorial da Câmera 3D',
-    title: 'Tour 2: Como girar e usar os botões da tela 3D',
+    title: 'Treino 2: Como girar e usar os botões da tela 3D',
     visualPrompt: 'Pratique girar o objeto na tela abaixo e clique no botão "Abrir" no canto superior do quadro 3D. O que acontece com o bloco quando você clica em "Abrir"?',
     points: 3.5,
     type: 'predict_solid',
@@ -66,7 +66,7 @@ export const PRACTICE_QUESTIONS: QuestionDef[] = [
     id: 103,
     block: 'BLOCK_5_COMPOSITION',
     blockTitle: 'Passo 3 de 3 • Tutorial de Encaixe e Envio',
-    title: 'Tour 3: Como preencher espaços e finalizar',
+    title: 'Treino 3: Como preencher espaços e finalizar',
     visualPrompt: 'Em algumas atividades você preencherá espaços clicando nos botões. Coloque a PEÇA AZUL na Esquerda e a PEÇA AMARELA na Direita!',
     points: 3.5,
     type: 'compose_house',
@@ -242,7 +242,7 @@ export function getQuestionsByMode(mode: AssessmentMode): QuestionDef[] {
 }
 
 // SERVER-SIDE VALIDATION FUNCTION
-// Protege gabarito contra inspeção no frontend (suporta Avaliação 1..10 e Tour de Treino 101..103)
+// Protege gabarito contra inspeção no frontend (suporta Avaliação 1..10 e Treino 101..103)
 export function gradeStudentAnswer(questionId: number, answerData: any): { isCorrect: boolean; score: number } {
   const allQuestions = [...QUESTIONS, ...PRACTICE_QUESTIONS];
   const q = allQuestions.find(item => item.id === questionId);
@@ -250,7 +250,7 @@ export function gradeStudentAnswer(questionId: number, answerData: any): { isCor
 
   switch (q.id) {
     // ------------------------------------------------------------------------
-    // QUESTÕES DO MODO TREINO (TOUR / TUTORIAL 101..103)
+    // QUESTÕES DO MODO TREINO (TUTORIAL 101..103)
     // ------------------------------------------------------------------------
     case 101: {
       const isCorrect = answerData?.selectedOption === 'line';

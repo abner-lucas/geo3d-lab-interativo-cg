@@ -43,16 +43,16 @@ export function QuestionRenderer({
   return (
     <div className="w-full flex flex-col gap-6">
       {/* ================================================================== */}
-      {/* MODO TREINO — TOUR / TUTORIAL DE AMBIENTAÇÃO (QUESTÕES 101, 102, 103) */}
+      {/* MODO TREINO — TUTORIAL DE AMBIENTAÇÃO (QUESTÕES 101, 102, 103)      */}
       {/* ================================================================== */}
 
-      {/* TOUR PASSO 1 (ID 101): Aprendendo a clicar em uma alternativa */}
+      {/* TREINO PASSO 1 (ID 101): Aprendendo a clicar em uma alternativa */}
       {question.id === 101 && (
         <div className="flex flex-col gap-6">
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
             <MousePointerClick className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
             <div className="text-xs text-emerald-900 leading-relaxed">
-              <p className="font-black uppercase tracking-wider mb-0.5">Guia do Tour (Passo 1 de 3) — Como Marcar Respostas</p>
+              <p className="font-black uppercase tracking-wider mb-0.5">Guia de Treino (Passo 1 de 3) — Como Marcar Respostas</p>
               <p>
                 Durante a avaliação, basta clicar sobre o cartão desejado. Uma borda azul aparecerá ao redor da opção escolhida e o sistema salvará sua resposta automaticamente. Teste clicando na <strong>Linha Reta</strong> abaixo:
               </p>
@@ -134,13 +134,13 @@ export function QuestionRenderer({
         </div>
       )}
 
-      {/* TOUR PASSO 2 (ID 102): Aprendendo a girar a câmera 3D e usar os botões do visualizador */}
+      {/* TREINO PASSO 2 (ID 102): Aprendendo a girar a câmera 3D e usar os botões do visualizador */}
       {question.id === 102 && (
         <div className="flex flex-col gap-6">
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
             <Compass className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
             <div className="text-xs text-emerald-900 leading-relaxed">
-              <p className="font-black uppercase tracking-wider mb-0.5">Guia do Tour (Passo 2 de 3) — Como Usar o Visualizador 3D</p>
+              <p className="font-black uppercase tracking-wider mb-0.5">Guia de Treino (Passo 2 de 3) — Como Usar o Visualizador 3D</p>
               <p>
                 Você pode <strong>arrastar com o mouse/dedo</strong> sobre a caixa 3D ou usar as <strong>setas no canto superior direito</strong> para girar o objeto. Teste também clicar no botão azul <strong>&ldquo;ABRIR PLANIFICAÇÃO&rdquo;</strong> na barra inferior da tela 3D e responda abaixo:
               </p>
@@ -179,15 +179,15 @@ export function QuestionRenderer({
         </div>
       )}
 
-      {/* TOUR PASSO 3 (ID 103): Aprendendo a preencher lacunas por clique */}
+      {/* TREINO PASSO 3 (ID 103): Aprendendo a preencher lacunas por clique */}
       {question.id === 103 && (
         <div className="flex flex-col gap-6">
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-3">
             <Layers className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
             <div className="text-xs text-emerald-900 leading-relaxed">
-              <p className="font-black uppercase tracking-wider mb-0.5">Guia do Tour (Passo 3 de 3) — Como Encaixar Peças e Concluir</p>
+              <p className="font-black uppercase tracking-wider mb-0.5">Guia de Treino (Passo 3 de 3) — Como Encaixar Peças e Concluir</p>
               <p>
-                Algumas questões possuem espaços para preencher clicando nos botões correspondentes. Complete os dois lados abaixo (<strong>Peça Azul na Esquerda</strong> e <strong>Peça Amarela na Direita</strong>) e depois clique no botão verde <strong>&ldquo;CONCLUIR TOUR DE TREINO&rdquo;</strong>!
+                Algumas questões possuem espaços para preencher clicando nos botões correspondentes. Complete os dois lados abaixo (<strong>Peça Azul na Esquerda</strong> e <strong>Peça Amarela na Direita</strong>) e depois clique no botão verde <strong>&ldquo;CONCLUIR TREINO&rdquo;</strong>!
               </p>
             </div>
           </div>

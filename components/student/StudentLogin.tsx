@@ -100,7 +100,7 @@ export function StudentLogin({
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>MODO TREINO (TOUR)</span>
+              <span>MODO TREINO</span>
             </button>
           </div>
 

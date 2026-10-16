@@ -112,7 +112,7 @@ export function StudentAssessmentView({
     }
   };
 
-  // Finalize assessment or tour
+  // Finalize assessment or practice
   const handleFinishAssessment = async () => {
     try {
       setIsSaving(true);
@@ -171,7 +171,7 @@ export function StudentAssessmentView({
 
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
           {isPractice ? <BookOpen className="w-4 h-4" /> : <Award className="w-4 h-4" />}
-          {isPractice ? 'TOUR DE TREINO CONCLUÍDO' : 'AVALIAÇÃO CONCLUÍDA COM SUCESSO'}
+          {isPractice ? 'TREINO CONCLUÍDO' : 'AVALIAÇÃO CONCLUÍDA COM SUCESSO'}
         </span>
 
         <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
@@ -179,7 +179,7 @@ export function StudentAssessmentView({
         </h1>
         <p className="text-sm text-slate-600 max-w-lg mb-8">
           {isPractice
-            ? 'Você concluiu os 3 passos do Tour de Ambientação! Agora você já sabe selecionar alternativas, girar objetos 3D e preencher espaços para realizar o Modo Avaliação.'
+            ? 'Você concluiu os 3 passos de Treino! Agora você já sabe selecionar alternativas, girar objetos 3D e preencher espaços para realizar o Modo Avaliação.'
             : 'Todas as suas respostas foram salvas no sistema e enviadas para o professor com sucesso.'}
         </p>
 
@@ -192,7 +192,7 @@ export function StudentAssessmentView({
             </div>
             <div className="text-right">
               <p className="text-xs text-slate-500 font-bold uppercase">
-                {isPractice ? 'Passos do Tour' : 'Questões Registradas'}
+                {isPractice ? 'Passos de Treino' : 'Questões Registradas'}
               </p>
               <p className="font-bold text-base text-blue-600">
                 {answeredCount} de {totalQuestionsCount}
@@ -204,7 +204,7 @@ export function StudentAssessmentView({
             isPractice ? 'bg-emerald-50 border-emerald-200' : 'bg-blue-50 border-blue-200'
           }`}>
             <span className={`font-bold text-sm ${isPractice ? 'text-emerald-900' : 'text-blue-900'}`}>
-              {isPractice ? 'Pontuação no Tour de Treino:' : 'Nota Total da Avaliação:'}
+              {isPractice ? 'Pontuação no Treino:' : 'Nota Total da Avaliação:'}
             </span>
             <span className={`text-2xl font-black ${isPractice ? 'text-emerald-700' : 'text-blue-700'}`}>
               {attempt.scoreAdjusted ?? attempt.totalScore} / 10,0
@@ -254,7 +254,7 @@ export function StudentAssessmentView({
                     : 'bg-blue-100 text-blue-800'
                 }`}
               >
-                {isPractice ? 'Modo Treino (Tour 3 Passos)' : 'Modo Avaliação'}
+                {isPractice ? 'Modo Treino (3 Passos)' : 'Modo Avaliação'}
               </span>
             </div>
             <p className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
@@ -318,7 +318,7 @@ export function StudentAssessmentView({
               <h4 className="font-bold text-sm text-white">Mediação em Língua Brasileira de Sinais (Libras)</h4>
             </div>
             <p className="text-xs text-blue-200 leading-relaxed">
-              Espaço reservado para vídeos reais de mediação em Libras cadastrados pelo professor para {isPractice ? `o Passo ${currentQuestionIndex + 1} do Tour` : `a Questão ${currentQ.id}`}.
+              Espaço reservado para vídeos reais de mediação em Libras cadastrados pelo professor para {isPractice ? `o Passo ${currentQuestionIndex + 1} de Treino` : `a Questão ${currentQ.id}`}.
             </p>
           </div>
 
@@ -337,7 +337,7 @@ export function StudentAssessmentView({
       {/* ------------------------------------------------------------------- */}
       <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col gap-3">
         <div className="flex items-center justify-between text-xs font-bold text-slate-600">
-          <span>{isPractice ? 'PROGRESSO DO TOUR DE TREINO (TUTORIAL)' : 'PROGRESSO DA AVALIAÇÃO (COMPLEXIDADE CRESCENTE)'}</span>
+          <span>{isPractice ? 'PROGRESSO DO MODO TREINO' : 'PROGRESSO DA AVALIAÇÃO (COMPLEXIDADE CRESCENTE)'}</span>
           <span className={isPractice ? 'text-emerald-600' : 'text-blue-600'}>
             {answeredCount} de {totalQuestionsCount} {isPractice ? 'passos concluídos' : 'respondidas'}
           </span>
@@ -433,7 +433,7 @@ export function StudentAssessmentView({
               onClick={() => setShowReviewModal(true)}
               className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
             >
-              {isPractice ? 'Ver Passos do Tour' : 'Revisar Todas'}
+              {isPractice ? 'Ver Passos de Treino' : 'Revisar Todas'}
             </button>
           </div>
 
@@ -456,7 +456,7 @@ export function StudentAssessmentView({
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition shadow-xs cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              <span>{isPractice ? 'CONCLUIR TOUR DE TREINO' : 'FINALIZAR AVALIAÇÃO'}</span>
+              <span>{isPractice ? 'CONCLUIR TREINO' : 'FINALIZAR AVALIAÇÃO'}</span>
             </button>
           )}
         </div>
@@ -470,7 +470,7 @@ export function StudentAssessmentView({
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-lg font-black text-slate-900">
-                {isPractice ? 'Resumo do Tour de Treino' : 'Resumo de Questões Respondidas'}
+                {isPractice ? 'Resumo de Passos de Treino' : 'Resumo de Questões Respondidas'}
               </h3>
               <button
                 onClick={() => setShowReviewModal(false)}
@@ -533,11 +533,11 @@ export function StudentAssessmentView({
 
             <div>
               <h3 className="text-xl font-black text-slate-900 mb-1">
-                {isPractice ? 'Concluir Tour de Treino?' : 'Finalizar e Entregar Avaliação?'}
+                {isPractice ? 'Concluir Treino?' : 'Finalizar e Entregar Avaliação?'}
               </h3>
               <p className="text-xs text-slate-600">
                 {isPractice
-                  ? `Você completou ${answeredCount} de ${totalQuestionsCount} passos do tutorial. Deseja finalizar seu tour de ambientação?`
+                  ? `Você completou ${answeredCount} de ${totalQuestionsCount} passos do tutorial. Deseja finalizar seu treino de ambientação?`
                   : `Você respondeu ${answeredCount} de ${totalQuestionsCount} questões. Deseja registrar suas respostas definitivas para o professor?`}
               </p>
             </div>
