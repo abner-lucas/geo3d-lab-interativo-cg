@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import gsap from 'gsap';
+import { SPRING_TOUCH, SPRING_POP, SPRING_CARD } from '@/lib/motionUtils';
 import { SolidType } from '@/types/geo3d';
 import { GeoCanvas } from '@/components/three/GeoCanvas';
 import { 
@@ -13,12 +16,115 @@ import {
   Compass,
   Gamepad2,
   Home,
-  Shapes
+  Shapes,
+  Play,
+  Pause,
+  RotateCcw,
+  Scan,
+  Activity
 } from 'lucide-react';
 
 export function ExplorationLab() {
   const [activeSolid, setActiveSolid] = useState<SolidType>('cube');
   const [activeTab, setActiveTab] = useState<'SHAPE' | 'DAILY_LIFE' | 'CG_3D'>('SHAPE');
+
+  // GSAP Exploded View & X-Ray Mode State
+  const [isExplodeMode, setIsExplodeMode] = useState<boolean>(false);
+  const [explodeProgress, setExplodeProgress] = useState<number>(0);
+  const [neonEdges, setNeonEdges] = useState<boolean>(true);
+  const [glowingVertices, setGlowingVertices] = useState<boolean>(true);
+  const [xrayMode, setXrayMode] = useState<boolean>(true);
+  const [showGuidingRays, setShowGuidingRays] = useState<boolean>(true);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
+  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  const progressProxyRef = useRef<{ val: number }>({ val: 0 });
+
+  useEffect(() => {
+    const tl = gsap.timeline({
+      paused: true,
+      onUpdate: () => {
+        setExplodeProgress(progressProxyRef.current.val);
+      },
+      onComplete: () => setIsPlaying(false),
+      onReverseComplete: () => setIsPlaying(false),
+    });
+
+    tl.to(progressProxyRef.current, {
+      val: 1,
+      duration: 1.5,
+      ease: 'power2.inOut',
+    });
+
+    timelineRef.current = tl;
+
+    return () => {
+      tl.kill();
+    };
+  }, []);
+
+  const toggleExplodeMode = () => {
+    if (!isExplodeMode) {
+      setIsExplodeMode(true);
+      if (explodeProgress < 0.2) {
+        goToStage(1);
+      }
+    } else {
+      goToStage(0, () => {
+        setIsExplodeMode(false);
+      });
+    }
+  };
+
+  const togglePlay = () => {
+    if (!timelineRef.current) return;
+    if (isPlaying) {
+      timelineRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      if (progressProxyRef.current.val >= 0.99) {
+        progressProxyRef.current.val = 0;
+        timelineRef.current.restart();
+      } else {
+        timelineRef.current.play();
+      }
+      setIsPlaying(true);
+    }
+  };
+
+  const reverseTimeline = () => {
+    if (!timelineRef.current) return;
+    timelineRef.current.reverse();
+    setIsPlaying(true);
+  };
+
+  const handleScrub = (val: number) => {
+    if (!timelineRef.current) return;
+    timelineRef.current.pause();
+    setIsPlaying(false);
+    progressProxyRef.current.val = val;
+    timelineRef.current.progress(val);
+    setExplodeProgress(val);
+  };
+
+  const goToStage = (target: number, onComplete?: () => void) => {
+    if (!timelineRef.current) return;
+    timelineRef.current.pause();
+    setIsPlaying(true);
+    gsap.to(progressProxyRef.current, {
+      val: target,
+      duration: 0.85,
+      ease: 'power3.out',
+      onUpdate: () => {
+        setExplodeProgress(progressProxyRef.current.val);
+        timelineRef.current?.progress(progressProxyRef.current.val);
+      },
+      onComplete: () => {
+        setIsPlaying(false);
+        if (onComplete) onComplete();
+      },
+    });
+  };
 
   const solidsData: Record<SolidType, {
     name: string;
@@ -125,20 +231,29 @@ export function ExplorationLab() {
         ].map(item => {
           const isActive = activeSolid === item.id;
           return (
-            <button
+            <motion.button
               key={item.id}
               onClick={() => setActiveSolid(item.id as SolidType)}
-              className={`p-3 rounded-xl border-2 font-bold text-xs flex flex-col items-center justify-center gap-2 transition cursor-pointer ${
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className={`relative p-3 rounded-xl border-2 font-bold text-xs flex flex-col items-center justify-center gap-2 transition cursor-pointer select-none ${
                 isActive
-                  ? 'border-blue-600 bg-blue-50 text-blue-800 shadow-xs'
+                  ? 'border-blue-600 bg-blue-50/80 text-blue-800 shadow-xs'
                   : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
               }`}
             >
-              <div className={`p-2 rounded-lg ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+              {isActive && (
+                <motion.div
+                  layoutId="activeSolidPill"
+                  className="absolute inset-0 rounded-xl bg-blue-100/50 -z-10"
+                  transition={SPRING_TOUCH}
+                />
+              )}
+              <div className={`p-2 rounded-lg transition ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
                 {item.icon}
               </div>
               <span className="text-center leading-tight">{item.label}</span>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -147,14 +262,216 @@ export function ExplorationLab() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Interactive 3D Canvas */}
         <div className="lg:col-span-8 flex flex-col gap-3">
+          {/* Top Bar: Exploded View & X-Ray Mode Toggle */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <div className={`p-2 rounded-xl transition-colors ${isExplodeMode ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-200' : 'bg-slate-100 text-slate-600'}`}>
+                <Scan className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-slate-900">Visão Explodida & Raio-X</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
+                    GSAP Coreografado
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Disseca as faces e destaca vértices luminosos e arestas neon no espaço 3D.
+                </p>
+              </div>
+            </div>
+
+            <motion.button
+              type="button"
+              onClick={toggleExplodeMode}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className={`px-4 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center justify-center gap-2 select-none ${
+                isExplodeMode
+                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-500/20'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>{isExplodeMode ? 'Fechar Dissecação' : 'Ativar Modo Raio-X'}</span>
+            </motion.button>
+          </div>
+
           <GeoCanvas
             solidType={activeSolid}
             height={440}
             interactive={true}
-            allowUnfold={true}
-            allowExplode={true}
+            allowUnfold={!isExplodeMode}
+            allowExplode={!isExplodeMode}
+            explodeProgress={explodeProgress}
+            xrayMode={xrayMode}
+            neonEdges={neonEdges}
+            glowingVertices={glowingVertices}
+            showGuidingRays={showGuidingRays}
             showFaceColors={true}
           />
+
+          {/* GSAP Timeline Scrubbing & FX Deck */}
+          <AnimatePresence>
+            {isExplodeMode && (
+              <motion.div
+                initial={{ opacity: 0, y: -12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                transition={SPRING_CARD}
+                className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 text-white border border-slate-700 shadow-xl flex flex-col gap-4"
+              >
+                {/* Deck Header: Title & Stage Presets */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                    <div>
+                      <span className="text-xs font-black tracking-wide text-cyan-300 uppercase">
+                        Linha do Tempo GSAP: Dissecação em 60 FPS
+                      </span>
+                      <div className="text-[11px] text-slate-400">
+                        {explodeProgress === 0
+                          ? 'Sólido Fechado (0%)'
+                          : explodeProgress >= 0.95
+                          ? 'Explosão e Raio-X Total (100%)'
+                          : `Dissecação em Andamento (${Math.round(explodeProgress * 100)}%)`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stage Quick Presets */}
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => goToStage(0)}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer text-[11px] ${
+                        explodeProgress < 0.1 ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      0% Fechado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => goToStage(0.5)}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer text-[11px] ${
+                        explodeProgress >= 0.4 && explodeProgress <= 0.6 ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      50% Dissecado
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => goToStage(1.0)}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer text-[11px] ${
+                        explodeProgress > 0.9 ? 'bg-cyan-500 text-slate-950 font-black' : 'text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      100% Raio-X
+                    </button>
+                  </div>
+                </div>
+
+                {/* Transport Scrub Bar */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={togglePlay}
+                    aria-label={isPlaying ? 'Pausar Animação' : 'Tocar Animação'}
+                    className="p-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black transition cursor-pointer shadow-md shadow-cyan-500/30 flex items-center justify-center shrink-0"
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={reverseTimeline}
+                    aria-label="Rebobinar Dissecação"
+                    title="Rebobinar Dissecação"
+                    className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer border border-slate-700 shrink-0"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+
+                  {/* Live Range Scrubber */}
+                  <div className="flex-1 flex flex-col gap-1">
+                    <div className="flex justify-between text-[11px] font-bold text-slate-400">
+                      <span>Início</span>
+                      <span className="text-cyan-400 font-mono font-black">{Math.round(explodeProgress * 100)}%</span>
+                      <span>Afastamento Máximo</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={explodeProgress}
+                      onChange={(e) => handleScrub(parseFloat(e.target.value))}
+                      className="w-full accent-cyan-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Visual FX Toggles */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80 text-xs">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mr-1">
+                    Efeitos Visuais:
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setNeonEdges(!neonEdges)}
+                    className={`px-3 py-1.5 rounded-xl font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                      neonEdges
+                        ? 'bg-cyan-950/70 border-cyan-500/60 text-cyan-300 shadow-2xs'
+                        : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-300'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f5ff]" />
+                    <span>Arestas Neon</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGlowingVertices(!glowingVertices)}
+                    className={`px-3 py-1.5 rounded-xl font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                      glowingVertices
+                        ? 'bg-purple-950/70 border-purple-500/60 text-purple-300 shadow-2xs'
+                        : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-300'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#a855f7]" />
+                    <span>Vértices Roxos</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setXrayMode(!xrayMode)}
+                    className={`px-3 py-1.5 rounded-xl font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                      xrayMode
+                        ? 'bg-blue-950/70 border-blue-500/60 text-blue-300 shadow-2xs'
+                        : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-300'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-blue-400" />
+                    <span>Faces Raio-X</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowGuidingRays(!showGuidingRays)}
+                    className={`px-3 py-1.5 rounded-xl font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                      showGuidingRays
+                        ? 'bg-amber-950/70 border-amber-500/60 text-amber-300 shadow-2xs'
+                        : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-300'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    <span>Raios Guias</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Spatial Axes Explanation Bar */}
           <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center gap-4 justify-between">
@@ -192,29 +509,108 @@ export function ExplorationLab() {
               </p>
             </div>
 
-            {/* Metric Badges */}
+            {/* Metric Badges with GSAP Explode Reactive Glow */}
             <div className="grid grid-cols-3 gap-2 py-1">
-              <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
-                <span className="text-xl font-black text-blue-700">{currentSolidInfo.facesCount}</span>
+              <div className={`p-2.5 rounded-xl text-center overflow-hidden transition-all duration-300 ${
+                isExplodeMode && explodeProgress > 0.05
+                  ? 'bg-blue-50/90 border-2 border-blue-400 ring-2 ring-blue-300 shadow-xs'
+                  : 'bg-blue-50 border border-blue-200'
+              }`}>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={currentSolidInfo.name + '-faces'}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.18 }}
+                    className="block text-xl font-black text-blue-700"
+                  >
+                    {currentSolidInfo.facesCount}
+                  </motion.span>
+                </AnimatePresence>
                 <p className="text-[10px] font-bold text-blue-900 uppercase">Faces (Lados)</p>
+                {isExplodeMode && explodeProgress > 0.05 && (
+                  <span className="block text-[9px] font-bold text-blue-600 mt-0.5">Separadas</span>
+                )}
               </div>
-              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-                <span className="text-xl font-black text-emerald-700">{currentSolidInfo.edgesCount}</span>
+
+              <div className={`p-2.5 rounded-xl text-center overflow-hidden transition-all duration-300 ${
+                isExplodeMode && explodeProgress > 0.05 && neonEdges
+                  ? 'bg-emerald-50/90 border-2 border-emerald-400 ring-2 ring-emerald-300 shadow-xs'
+                  : 'bg-emerald-50 border border-emerald-200'
+              }`}>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={currentSolidInfo.name + '-edges'}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.18 }}
+                    className="block text-xl font-black text-emerald-700"
+                  >
+                    {currentSolidInfo.edgesCount}
+                  </motion.span>
+                </AnimatePresence>
                 <p className="text-[10px] font-bold text-emerald-900 uppercase">Arestas (Linhas)</p>
+                {isExplodeMode && explodeProgress > 0.05 && neonEdges && (
+                  <span className="block text-[9px] font-bold text-emerald-600 mt-0.5">Neon</span>
+                )}
               </div>
-              <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-center">
-                <span className="text-xl font-black text-purple-700">{currentSolidInfo.verticesCount}</span>
+
+              <div className={`p-2.5 rounded-xl text-center overflow-hidden transition-all duration-300 ${
+                isExplodeMode && explodeProgress > 0.05 && glowingVertices
+                  ? 'bg-purple-50/90 border-2 border-purple-400 ring-2 ring-purple-300 shadow-xs'
+                  : 'bg-purple-50 border border-purple-200'
+              }`}>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={currentSolidInfo.name + '-vertices'}
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.18 }}
+                    className="block text-xl font-black text-purple-700"
+                  >
+                    {currentSolidInfo.verticesCount}
+                  </motion.span>
+                </AnimatePresence>
                 <p className="text-[10px] font-bold text-purple-900 uppercase">Vértices (Pontas)</p>
+                {isExplodeMode && explodeProgress > 0.05 && glowingVertices && (
+                  <span className="block text-[9px] font-bold text-purple-600 mt-0.5">Luzes Roxas</span>
+                )}
               </div>
             </div>
 
+            {/* Exploded View Pedagogical Callout */}
+            <AnimatePresence>
+              {isExplodeMode && explodeProgress > 0.05 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                  transition={SPRING_CARD}
+                  className="p-3.5 rounded-xl bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200 text-xs text-cyan-950 flex flex-col gap-1.5 overflow-hidden"
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-cyan-900">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                    <span>Como a Visão Explodida Funciona?</span>
+                  </div>
+                  <p className="text-[11px] text-cyan-900/80 leading-relaxed">
+                    Cada face se afasta do centro do sólido ao longo de sua direção normal.
+                    As linhas tracejadas mostram o caminho de volta ao centro e as bolinhas roxas
+                    destacam exatamente onde as arestas se cruzam para formar as pontas (vértices).
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Explanation Mini-Tabs */}
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 text-[11px] font-bold">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 text-[11px] font-bold relative">
               <button
                 type="button"
                 onClick={() => setActiveTab('SHAPE')}
                 className={`py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
-                  activeTab === 'SHAPE' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  activeTab === 'SHAPE' ? 'bg-white text-blue-700 shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Shapes className="w-3 h-3" />
@@ -224,7 +620,7 @@ export function ExplorationLab() {
                 type="button"
                 onClick={() => setActiveTab('DAILY_LIFE')}
                 className={`py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
-                  activeTab === 'DAILY_LIFE' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  activeTab === 'DAILY_LIFE' ? 'bg-white text-blue-700 shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Home className="w-3 h-3" />
@@ -234,7 +630,7 @@ export function ExplorationLab() {
                 type="button"
                 onClick={() => setActiveTab('CG_3D')}
                 className={`py-1.5 px-2 rounded-lg transition cursor-pointer flex items-center justify-center gap-1 ${
-                  activeTab === 'CG_3D' ? 'bg-white text-blue-700 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  activeTab === 'CG_3D' ? 'bg-white text-blue-700 shadow-2xs font-black' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Gamepad2 className="w-3 h-3" />
@@ -243,27 +639,47 @@ export function ExplorationLab() {
             </div>
 
             {/* Tab Content */}
-            <div className="space-y-2.5 text-xs border-t border-slate-100 pt-3">
-              {activeTab === 'SHAPE' && (
-                <div>
-                  <span className="font-bold text-slate-800">Como é a forma deste sólido:</span>
-                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.shapeDetails}</p>
-                </div>
-              )}
+            <div className="space-y-2.5 text-xs border-t border-slate-100 pt-3 min-h-[90px]">
+              <AnimatePresence mode="wait">
+                {activeTab === 'SHAPE' && (
+                  <motion.div
+                    key="SHAPE"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.16 }}
+                  >
+                    <span className="font-bold text-slate-800">Como é a forma deste sólido:</span>
+                    <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.shapeDetails}</p>
+                  </motion.div>
+                )}
 
-              {activeTab === 'DAILY_LIFE' && (
-                <div>
-                  <span className="font-bold text-slate-800">Onde encontramos no dia a dia:</span>
-                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.dailyLife}</p>
-                </div>
-              )}
+                {activeTab === 'DAILY_LIFE' && (
+                  <motion.div
+                    key="DAILY_LIFE"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.16 }}
+                  >
+                    <span className="font-bold text-slate-800">Onde encontramos no dia a dia:</span>
+                    <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.dailyLife}</p>
+                  </motion.div>
+                )}
 
-              {activeTab === 'CG_3D' && (
-                <div>
-                  <span className="font-bold text-slate-800">Como é usado em jogos e filmes 3D:</span>
-                  <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.cgUsage}</p>
-                </div>
-              )}
+                {activeTab === 'CG_3D' && (
+                  <motion.div
+                    key="CG_3D"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.16 }}
+                  >
+                    <span className="font-bold text-slate-800">Como é usado em jogos e filmes 3D:</span>
+                    <p className="text-slate-600 mt-1 leading-relaxed">{currentSolidInfo.cgUsage}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

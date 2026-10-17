@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { SPRING_TOUCH, SPRING_POP } from '@/lib/motionUtils';
 import { Box, Triangle, Circle, CheckCircle2, RotateCcw, ArrowRight, Sparkles } from 'lucide-react';
 import { GeoCanvas } from '@/components/three/GeoCanvas';
 
@@ -155,13 +157,18 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
               aria-label="Encaixe do Telhado (Parte Superior)"
             >
               {roofPiece ? (
-                <div className="flex items-center gap-2">
+                <motion.div 
+                  initial={{ scale: 0.85, y: -6, opacity: 0 }}
+                  animate={{ scale: 1, y: 0, opacity: 1 }}
+                  transition={SPRING_POP}
+                  className="flex items-center gap-2"
+                >
                   {getPieceData(roofPiece)?.icon}
                   <div>
                     <p className="font-bold text-sm text-slate-800">{getPieceData(roofPiece)?.name}</p>
                     <span className="text-[10px] text-amber-700 uppercase font-semibold">Telhado Encaixado</span>
                   </div>
-                </div>
+                </motion.div>
               ) : (
                 <span className="text-xs font-semibold text-slate-600">
                   {selectedPalettePiece ? 'Clique para colocar aqui no Telhado' : '1. Encaixe do Telhado (Topo)'}
@@ -188,13 +195,18 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
               aria-label="Encaixe da Base (Corpo da Casa)"
             >
               {basePiece ? (
-                <div className="flex items-center gap-2">
+                <motion.div 
+                  initial={{ scale: 0.85, y: 6, opacity: 0 }}
+                  animate={{ scale: 1, y: 0, opacity: 1 }}
+                  transition={SPRING_POP}
+                  className="flex items-center gap-2"
+                >
                   {getPieceData(basePiece)?.icon}
                   <div>
                     <p className="font-bold text-sm text-slate-800">{getPieceData(basePiece)?.name}</p>
                     <span className="text-[10px] text-blue-700 uppercase font-semibold">Corpo Encaixado</span>
                   </div>
-                </div>
+                </motion.div>
               ) : (
                 <span className="text-xs font-semibold text-slate-600">
                   {selectedPalettePiece ? 'Clique para colocar aqui no Corpo' : '2. Encaixe do Corpo (Base)'}
@@ -204,24 +216,36 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
           </div>
 
           {/* Live Student Assembly 3D Preview */}
-          {(basePiece || roofPiece) && (
-            <div className="w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-white mb-2 shadow-2xs">
-              <GeoCanvas
-                compositeModel={{ basePiece, roofPiece }}
-                height={128}
-                interactive={true}
-                allowUnfold={false}
-                allowExplode={false}
-              />
-            </div>
-          )}
+          <AnimatePresence>
+            {(basePiece || roofPiece) && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={SPRING_POP}
+                className="w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-white mb-2 shadow-2xs"
+              >
+                <GeoCanvas
+                  compositeModel={{ basePiece, roofPiece }}
+                  height={128}
+                  interactive={true}
+                  allowUnfold={false}
+                  allowExplode={false}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="text-center text-xs text-slate-600">
             {basePiece && roofPiece ? (
-              <span className="inline-flex items-center gap-1 text-emerald-600 font-bold">
+              <motion.span 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="inline-flex items-center gap-1 text-emerald-600 font-bold"
+              >
                 <CheckCircle2 className="w-4 h-4" />
                 Estrutura completa!
-              </span>
+              </motion.span>
             ) : (
               <span>Arraste ou selecione as peças abaixo para construir.</span>
             )}
@@ -243,14 +267,17 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
               const isUsedAsRoof = roofPiece === piece.id;
 
               return (
-                <div
+                <motion.div
                   key={piece.id}
                   draggable
-                  onDragStart={(e) => handleDragStart(e, piece.id)}
+                  onDragStart={(e) => handleDragStart(e as any, piece.id)}
                   onClick={() => setSelectedPalettePiece(isSelected ? null : piece.id)}
+                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={SPRING_TOUCH}
                   className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer transition select-none ${
                     isSelected
-                      ? 'border-blue-600 bg-blue-50/70 shadow-md scale-[1.02]'
+                      ? 'border-blue-600 bg-blue-50/70 shadow-md ring-2 ring-blue-300'
                       : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
                   }`}
                   role="button"
@@ -296,7 +323,7 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
                       Pôr no Telhado
                     </button>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

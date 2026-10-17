@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'motion/react';
+import { SPRING_TOUCH } from '@/lib/motionUtils';
 import { QuestionDef, AssessmentMode } from '@/types/geo3d';
 import { GeoCanvas } from '@/components/three/GeoCanvas';
 import { 
@@ -61,9 +63,12 @@ export function QuestionRenderer({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Opção 1: Linha Reta */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('line')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'line'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -81,12 +86,15 @@ export function QuestionRenderer({
                 <p className="font-bold text-slate-800 text-sm">Linha Reta</p>
                 <span className="text-xs text-slate-500">Traço reto contínuo</span>
               </div>
-            </button>
+            </motion.button>
 
             {/* Opção 2: Pontos Separados */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('dots')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'dots'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -106,12 +114,15 @@ export function QuestionRenderer({
                 <p className="font-bold text-slate-800 text-sm">Pontos Separados</p>
                 <span className="text-xs text-slate-500">Três pontos isolados</span>
               </div>
-            </button>
+            </motion.button>
 
             {/* Opção 3: Linha Ondulada */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('wave')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'wave'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -129,7 +140,7 @@ export function QuestionRenderer({
                 <p className="font-bold text-slate-800 text-sm">Linha Ondulada</p>
                 <span className="text-xs text-slate-500">Curva em formato de onda</span>
               </div>
-            </button>
+            </motion.button>
           </div>
         </div>
       )}
@@ -295,9 +306,12 @@ export function QuestionRenderer({
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Opção 1: Quadrado 2D */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('square')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'square'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -312,12 +326,15 @@ export function QuestionRenderer({
               <div>
                 <p className="font-bold text-slate-800 text-sm">Quadrado</p>
               </div>
-            </button>
+            </motion.button>
 
             {/* Opção 2: Triângulo 2D */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('triangle')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'triangle'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -332,12 +349,15 @@ export function QuestionRenderer({
               <div>
                 <p className="font-bold text-slate-800 text-sm">Triângulo</p>
               </div>
-            </button>
+            </motion.button>
 
             {/* Opção 3: Cubo */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('cube')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'cube'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -352,7 +372,7 @@ export function QuestionRenderer({
               <div>
                 <p className="font-bold text-slate-800 text-sm">Cubo</p>
               </div>
-            </button>
+            </motion.button>
           </div>
         </div>
       )}
@@ -389,10 +409,13 @@ export function QuestionRenderer({
             {question.options?.map((opt: any) => {
               const isSelected = currentAnswer?.selectedOption === opt.id;
               return (
-                <button
+                <motion.button
                   key={opt.id}
                   type="button"
                   onClick={() => handleSelectOption(opt.id)}
+                  whileHover={{ scale: 1.025 }}
+                  whileTap={{ scale: 0.975 }}
+                  transition={SPRING_TOUCH}
                   className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition text-center cursor-pointer ${
                     isSelected
                       ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -404,7 +427,7 @@ export function QuestionRenderer({
                     <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -433,10 +456,13 @@ export function QuestionRenderer({
             {question.options?.map((opt: any) => {
               const isSelected = currentAnswer?.selectedOption === opt.id;
               return (
-                <button
+                <motion.button
                   key={opt.id}
                   type="button"
                   onClick={() => handleSelectOption(opt.id)}
+                  whileHover={{ scale: 1.025 }}
+                  whileTap={{ scale: 0.975 }}
+                  transition={SPRING_TOUCH}
                   className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition text-center cursor-pointer ${
                     isSelected
                       ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -448,7 +474,7 @@ export function QuestionRenderer({
                     <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -477,10 +503,13 @@ export function QuestionRenderer({
             {question.options?.map((opt: any) => {
               const isSelected = currentAnswer?.selectedOption === opt.id;
               return (
-                <button
+                <motion.button
                   key={opt.id}
                   type="button"
                   onClick={() => handleSelectOption(opt.id)}
+                  whileHover={{ scale: 1.025 }}
+                  whileTap={{ scale: 0.975 }}
+                  transition={SPRING_TOUCH}
                   className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition text-center cursor-pointer ${
                     isSelected
                       ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -492,7 +521,7 @@ export function QuestionRenderer({
                     <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -526,10 +555,13 @@ export function QuestionRenderer({
             {question.options?.map((opt: any) => {
               const isSelected = currentAnswer?.selectedOption === opt.id;
               return (
-                <button
+                <motion.button
                   key={opt.id}
                   type="button"
                   onClick={() => handleSelectOption(opt.id)}
+                  whileHover={{ scale: 1.025 }}
+                  whileTap={{ scale: 0.975 }}
+                  transition={SPRING_TOUCH}
                   className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition text-center cursor-pointer ${
                     isSelected
                       ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -541,7 +573,7 @@ export function QuestionRenderer({
                     <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -555,9 +587,12 @@ export function QuestionRenderer({
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Molde A: Válido (Cruz 1-4-1) */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('net_a')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'net_a'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -573,12 +608,15 @@ export function QuestionRenderer({
                 <p className="font-bold text-slate-800 text-sm">Disposição 1</p>
                 <span className="text-xs text-slate-500">4 centrais + 1 em cada lado oposto</span>
               </div>
-            </button>
+            </motion.button>
 
             {/* Molde B: Inválido (5 em linha) */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('net_b')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'net_b'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -594,12 +632,15 @@ export function QuestionRenderer({
                 <p className="font-bold text-slate-800 text-sm">Disposição 2</p>
                 <span className="text-xs text-slate-500">5 quadrados seguidos em linha</span>
               </div>
-            </button>
+            </motion.button>
 
             {/* Molde C: Inválido (Abas sobrepostas) */}
-            <button
+            <motion.button
               type="button"
               onClick={() => handleSelectOption('net_c')}
+              whileHover={{ scale: 1.025 }}
+              whileTap={{ scale: 0.975 }}
+              transition={SPRING_TOUCH}
               className={`p-5 rounded-2xl border-2 flex flex-col items-center justify-between gap-4 transition text-center cursor-pointer ${
                 currentAnswer?.selectedOption === 'net_c'
                   ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
@@ -615,7 +656,7 @@ export function QuestionRenderer({
                 <p className="font-bold text-slate-800 text-sm">Disposição 3</p>
                 <span className="text-xs text-slate-500">Duas abas apenas no lado superior</span>
               </div>
-            </button>
+            </motion.button>
           </div>
         </div>
       )}
@@ -663,10 +704,13 @@ export function QuestionRenderer({
                 {question.options?.map((opt: any) => {
                   const isSelected = currentAnswer?.selectedOption === opt.id;
                   return (
-                    <button
+                    <motion.button
                       key={opt.id}
                       type="button"
                       onClick={() => handleSelectOption(opt.id)}
+                      whileHover={{ scale: 1.025 }}
+                      whileTap={{ scale: 0.975 }}
+                      transition={SPRING_TOUCH}
                       className={`p-3 rounded-xl border-2 flex items-center gap-3 transition cursor-pointer ${
                         isSelected
                           ? 'border-blue-600 bg-blue-50/80 shadow-xs ring-2 ring-blue-300'
@@ -676,7 +720,7 @@ export function QuestionRenderer({
                     >
                       <span className="w-5 h-5 rounded-md shadow-xs border border-black/10 shrink-0" style={{ backgroundColor: opt.hex }} />
                       <span className="font-bold text-xs text-slate-800">{opt.name}</span>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -719,9 +763,12 @@ export function QuestionRenderer({
 
               <div className="flex flex-col gap-3">
                 {/* Vista A: Retângulo com linha central (correta) */}
-                <button
+                <motion.button
                   type="button"
                   onClick={() => handleSelectOption('view_a')}
+                  whileHover={{ scale: 1.025 }}
+                  whileTap={{ scale: 0.975 }}
+                  transition={SPRING_TOUCH}
                   className={`p-3 rounded-xl border-2 flex items-center gap-3 transition cursor-pointer ${
                     currentAnswer?.selectedOption === 'view_a'
                       ? 'border-blue-600 bg-blue-50/80 shadow-xs ring-2 ring-blue-300'
@@ -739,12 +786,15 @@ export function QuestionRenderer({
                     <p className="font-bold text-xs text-slate-800">Vista A</p>
                     <span className="text-[11px] text-slate-500">Retângulo com divisão central</span>
                   </div>
-                </button>
+                </motion.button>
 
                 {/* Vista B: Triângulo */}
-                <button
+                <motion.button
                   type="button"
                   onClick={() => handleSelectOption('view_b')}
+                  whileHover={{ scale: 1.025 }}
+                  whileTap={{ scale: 0.975 }}
+                  transition={SPRING_TOUCH}
                   className={`p-3 rounded-xl border-2 flex items-center gap-3 transition cursor-pointer ${
                     currentAnswer?.selectedOption === 'view_b'
                       ? 'border-blue-600 bg-blue-50/80 shadow-xs ring-2 ring-blue-300'
@@ -761,12 +811,15 @@ export function QuestionRenderer({
                     <p className="font-bold text-xs text-slate-800">Vista B</p>
                     <span className="text-[11px] text-slate-500">Triângulo simples</span>
                   </div>
-                </button>
+                </motion.button>
 
                 {/* Vista C: Círculo */}
-                <button
+                <motion.button
                   type="button"
                   onClick={() => handleSelectOption('view_c')}
+                  whileHover={{ scale: 1.025 }}
+                  whileTap={{ scale: 0.975 }}
+                  transition={SPRING_TOUCH}
                   className={`p-3 rounded-xl border-2 flex items-center gap-3 transition cursor-pointer ${
                     currentAnswer?.selectedOption === 'view_c'
                       ? 'border-blue-600 bg-blue-50/80 shadow-xs ring-2 ring-blue-300'
@@ -783,7 +836,7 @@ export function QuestionRenderer({
                     <p className="font-bold text-xs text-slate-800">Vista C</p>
                     <span className="text-[11px] text-slate-500">Círculo</span>
                   </div>
-                </button>
+                </motion.button>
               </div>
             </div>
           </div>

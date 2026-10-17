@@ -18,6 +18,11 @@ export type ProceduralModelOptions = {
   explodeProgress?: number; // 0 = unido, 1 = partes destacadas (vista explodida)
   showVertices?: boolean;
   highlightPartId?: string | null;
+  xrayMode?: boolean; // Opacidade translúcida para visualização interna Raio-X
+  neonEdges?: boolean; // Arestas em ciano brilhante / ouro neon
+  glowingVertices?: boolean; // Vértices esféricos aumentados com brilho emissivo violeta
+  showGuidingRays?: boolean; // Feixes tracejados ligando faces ao centro geométrico
+  explodeMultiplier?: number; // Fator de escala da distância de separação
 };
 
 export type SculptPartMetadata = {
@@ -150,21 +155,25 @@ export function createSculptMaterial(
     opacity?: number;
     highlighted?: boolean;
     wireframe?: boolean;
+    xrayMode?: boolean;
   } = {}
 ): THREE.MeshPhysicalMaterial {
   const color = new THREE.Color().setStyle(hexColor, THREE.SRGBColorSpace);
   const roughMap = getProceduralRoughnessMap(id);
 
+  const isXray = options.xrayMode ?? false;
+  const opacity = isXray ? 0.74 : (options.opacity ?? 1);
+
   const mat = new THREE.MeshPhysicalMaterial({
     color,
-    roughness: options.roughness ?? 0.32,
-    metalness: options.metalness ?? 0.08,
-    clearcoat: options.clearcoat ?? 0.18,
+    roughness: isXray ? 0.16 : (options.roughness ?? 0.32),
+    metalness: isXray ? 0.04 : (options.metalness ?? 0.08),
+    clearcoat: isXray ? 0.8 : (options.clearcoat ?? 0.18),
     clearcoatRoughness: 0.25,
     roughnessMap: roughMap,
     side: THREE.DoubleSide,
-    transparent: (options.opacity ?? 1) < 1,
-    opacity: options.opacity ?? 1,
+    transparent: opacity < 1,
+    opacity,
     wireframe: options.wireframe ?? false,
     polygonOffset: true,
     polygonOffsetFactor: 1,
@@ -174,27 +183,109 @@ export function createSculptMaterial(
   if (options.highlighted) {
     mat.emissive = new THREE.Color().setStyle(hexColor, THREE.SRGBColorSpace);
     mat.emissiveIntensity = 0.28;
+  } else if (isXray) {
+    mat.emissive = new THREE.Color().setStyle(hexColor, THREE.SRGBColorSpace);
+    mat.emissiveIntensity = 0.12;
   }
 
   return mat;
 }
 
-// Helper for crisp architectural edges and corner vertices
+// Helper for crisp architectural edges and corner vertices with neon glow support
 function decorateMeshWithEdges(
   mesh: THREE.Mesh,
   thresholdAngle = 15,
-  highlighted = false
+  highlighted = false,
+  neonMode = false
 ): THREE.Mesh {
   const edgesGeom = new THREE.EdgesGeometry(mesh.geometry, thresholdAngle);
+  const edgeColor = highlighted ? 0xf59e0b : (neonMode ? 0x00f5ff : 0x0f172a);
   const edgeMat = new THREE.LineBasicMaterial({
-    color: highlighted ? 0xf59e0b : 0x0f172a,
-    linewidth: 2,
+    color: edgeColor,
+    linewidth: neonMode ? 2.5 : 2,
+    transparent: neonMode,
+    opacity: neonMode ? 0.95 : 1,
   });
   const lines = new THREE.LineSegments(edgesGeom, edgeMat);
   lines.name = `${mesh.name}__edges`;
   lines.raycast = () => {}; // Do not intercept raycast clicks on edge lines
   mesh.add(lines);
   return mesh;
+}
+
+// Helper to render GSAP X-Ray & Exploded visual scaffolding: ghost wireframe, guiding rays, and glowing vertices
+function addExplodeVisualAids(
+  root: THREE.Group,
+  options: ProceduralModelOptions,
+  center: THREE.Vector3,
+  ghostGeometry: THREE.BufferGeometry | null,
+  facePositions: THREE.Vector3[],
+  vertexPositions: [number, number, number][]
+) {
+  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1);
+  const t = THREE.MathUtils.clamp(options.unfoldProgress ?? 0, 0, 1);
+  if (t > 0.08) return; // Only in closed 3D state
+
+  // 1. Ghost Central Wireframe (Origem Estrutural do Sólido)
+  if (ghostGeometry && explode > 0.05) {
+    const ghostMat = new THREE.LineBasicMaterial({
+      color: options.neonEdges ? 0x38bdf8 : 0x94a3b8,
+      transparent: true,
+      opacity: Math.min(0.48, explode * 0.55),
+      depthWrite: false,
+    });
+    const ghost = new THREE.LineSegments(new THREE.EdgesGeometry(ghostGeometry), ghostMat);
+    ghost.position.copy(center);
+    ghost.name = 'ghost_wireframe';
+    root.add(ghost);
+  }
+
+  // 2. Guiding Rays (Feixes conectando cada face flutuante ao centro)
+  if ((options.showGuidingRays ?? true) && explode > 0.06) {
+    const rayPoints: THREE.Vector3[] = [];
+    facePositions.forEach(pos => {
+      rayPoints.push(center.clone());
+      rayPoints.push(pos.clone());
+    });
+    if (rayPoints.length > 0) {
+      const rayGeom = new THREE.BufferGeometry().setFromPoints(rayPoints);
+      const rayMat = new THREE.LineDashedMaterial({
+        color: options.neonEdges ? 0x00f5ff : 0x64748b,
+        dashSize: 0.12,
+        gapSize: 0.08,
+        transparent: true,
+        opacity: Math.min(0.7, explode * 0.8),
+        depthWrite: false,
+      });
+      const rays = new THREE.LineSegments(rayGeom, rayMat);
+      rays.computeLineDistances();
+      rays.name = 'guiding_rays';
+      root.add(rays);
+    }
+  }
+
+  // 3. Glowing Corner Vertices (Vértices nos cantos do sólido)
+  if ((options.showVertices ?? false) || (options.glowingVertices ?? false)) {
+    const vGroup = new THREE.Group();
+    vGroup.name = 'vertices_markers';
+    const isGlowing = options.glowingVertices ?? false;
+    const vRadius = isGlowing ? 0.12 : 0.085;
+    const vGeom = new THREE.SphereGeometry(vRadius, 16, 16);
+    const vMat = new THREE.MeshStandardMaterial({
+      color: isGlowing ? 0x9333ea : 0x7c3aed,
+      emissive: isGlowing ? 0xa855f7 : 0x000000,
+      emissiveIntensity: isGlowing ? 1.1 : 0,
+      roughness: 0.15,
+      metalness: 0.25,
+    });
+
+    vertexPositions.forEach(([vx, vy, vz]) => {
+      const sp = new THREE.Mesh(vGeom, vMat);
+      sp.position.set(vx + center.x, vy + center.y, vz + center.z);
+      vGroup.add(sp);
+    });
+    root.add(vGroup);
+  }
 }
 
 function registerPart(
@@ -231,7 +322,8 @@ export function createCubeSculptModel(options: ProceduralModelOptions = {}): THR
   root.name = 'CubeSculptModel';
 
   const t = THREE.MathUtils.clamp(options.unfoldProgress ?? 0, 0, 1);
-  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * 0.55;
+  const explodeDist = (options.explodeMultiplier ?? 1.25) * 1.0;
+  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * explodeDist;
   const colorful = options.colorfulFaces ?? true;
 
   const runtime: ProceduralModelRuntime = {
@@ -259,8 +351,9 @@ export function createCubeSculptModel(options: ProceduralModelOptions = {}): THR
     const mat = createSculptMaterial(`cube_${id}`, hex, {
       highlighted: isHighlighted,
       wireframe: options.wireframe,
+      xrayMode: options.xrayMode,
     });
-    const mesh = decorateMeshWithEdges(new THREE.Mesh(geom, mat), 15, isHighlighted);
+    const mesh = decorateMeshWithEdges(new THREE.Mesh(geom, mat), 15, isHighlighted, options.neonEdges);
     mesh.castShadow = options.castShadow ?? true;
     mesh.receiveShadow = options.receiveShadow ?? true;
     return {
@@ -342,24 +435,25 @@ export function createCubeSculptModel(options: ProceduralModelOptions = {}): THR
   root.add(rightPivot);
   registerPart(runtime, rightPivot, rightPart.mesh, rightPart.meta);
 
-  // Optional Vertex Markers when closed (t < 0.08)
-  if ((options.showVertices ?? false) && t < 0.08) {
-    const vGroup = new THREE.Group();
-    vGroup.name = 'vertices_markers';
-    const vGeom = new THREE.SphereGeometry(0.085, 16, 16);
-    const vMat = new THREE.MeshStandardMaterial({ color: 0x7c3aed, roughness: 0.2 });
-    const coords = [-H, H];
-    coords.forEach(vx => {
-      coords.forEach(vy => {
-        coords.forEach(vz => {
-          const sp = new THREE.Mesh(vGeom, vMat);
-          sp.position.set(vx, vy, vz);
-          vGroup.add(sp);
-        });
-      });
-    });
-    root.add(vGroup);
-  }
+  // GSAP X-Ray & Explode visual scaffolding (Ghost wireframe, guiding rays, glowing vertices)
+  addExplodeVisualAids(
+    root,
+    options,
+    new THREE.Vector3(0, yCenterOffset, 0),
+    new THREE.BoxGeometry(S, S, S),
+    [
+      new THREE.Vector3(0, yCenterOffset - explode * (1 - t), 0),
+      new THREE.Vector3(0, yCenterOffset, H + explode * (1 - t) + H / 2),
+      new THREE.Vector3(0, yCenterOffset, -H - explode * (1 - t) - H / 2),
+      new THREE.Vector3(0, yCenterOffset + explode * (1 - t) + H, 0),
+      new THREE.Vector3(-H - explode * (1 - t) - H / 2, yCenterOffset, 0),
+      new THREE.Vector3(H + explode * (1 - t) + H / 2, yCenterOffset, 0),
+    ],
+    [
+      [-H, -H, -H], [H, -H, -H], [H, H, -H], [-H, H, -H],
+      [-H, -H, H], [H, -H, H], [H, H, H], [-H, H, H]
+    ]
+  );
 
   root.userData.sculptRuntime = runtime;
   return root;
@@ -374,7 +468,8 @@ export function createCuboidSculptModel(options: ProceduralModelOptions = {}): T
   root.name = 'CuboidSculptModel';
 
   const t = THREE.MathUtils.clamp(options.unfoldProgress ?? 0, 0, 1);
-  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * 0.55;
+  const explodeDist = (options.explodeMultiplier ?? 1.25) * 1.0;
+  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * explodeDist;
   const colorful = options.colorfulFaces ?? true;
 
   const runtime: ProceduralModelRuntime = {
@@ -405,8 +500,9 @@ export function createCuboidSculptModel(options: ProceduralModelOptions = {}): T
     const mat = createSculptMaterial(`cuboid_${id}`, hex, {
       highlighted: isHighlighted,
       wireframe: options.wireframe,
+      xrayMode: options.xrayMode,
     });
-    const mesh = decorateMeshWithEdges(new THREE.Mesh(geom, mat), 15, isHighlighted);
+    const mesh = decorateMeshWithEdges(new THREE.Mesh(geom, mat), 15, isHighlighted, options.neonEdges);
     mesh.castShadow = options.castShadow ?? true;
     mesh.receiveShadow = options.receiveShadow ?? true;
     return {
@@ -488,6 +584,26 @@ export function createCuboidSculptModel(options: ProceduralModelOptions = {}): T
   root.add(rightPivot);
   registerPart(runtime, rightPivot, rightPart.mesh, rightPart.meta);
 
+  // GSAP X-Ray & Explode visual scaffolding (Ghost wireframe, guiding rays, glowing vertices)
+  addExplodeVisualAids(
+    root,
+    options,
+    new THREE.Vector3(0, yOffset, 0),
+    new THREE.BoxGeometry(W, H, D),
+    [
+      new THREE.Vector3(0, yOffset - explode * (1 - t), 0),
+      new THREE.Vector3(0, yOffset, D / 2 + explode * (1 - t) + H / 2),
+      new THREE.Vector3(0, yOffset, -D / 2 - explode * (1 - t) - H / 2),
+      new THREE.Vector3(0, yOffset + explode * (1 - t) + H, 0),
+      new THREE.Vector3(-W / 2 - explode * (1 - t) - H / 2, yOffset, 0),
+      new THREE.Vector3(W / 2 + explode * (1 - t) + H / 2, yOffset, 0),
+    ],
+    [
+      [-W / 2, -H / 2, -D / 2], [W / 2, -H / 2, -D / 2], [W / 2, H / 2, -D / 2], [-W / 2, H / 2, -D / 2],
+      [-W / 2, -H / 2, D / 2], [W / 2, -H / 2, D / 2], [W / 2, H / 2, D / 2], [-W / 2, H / 2, D / 2]
+    ]
+  );
+
   root.userData.sculptRuntime = runtime;
   return root;
 }
@@ -501,7 +617,8 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   root.name = 'TriangularPrismSculptModel';
 
   const t = THREE.MathUtils.clamp(options.unfoldProgress ?? 0, 0, 1);
-  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * 0.55;
+  const explodeDist = (options.explodeMultiplier ?? 1.25) * 1.0;
+  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * explodeDist;
   const colorful = options.colorfulFaces ?? true;
 
   const runtime: ProceduralModelRuntime = {
@@ -527,10 +644,11 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   const baseMesh = decorateMeshWithEdges(
     new THREE.Mesh(
       new THREE.PlaneGeometry(S, L),
-      createSculptMaterial('prism_base', baseHex, { highlighted: baseHighlighted, wireframe: options.wireframe })
+      createSculptMaterial('prism_base', baseHex, { highlighted: baseHighlighted, wireframe: options.wireframe, xrayMode: options.xrayMode })
     ),
     15,
-    baseHighlighted
+    baseHighlighted,
+    options.neonEdges
   );
   baseMesh.rotation.x = Math.PI / 2;
   basePivot.add(baseMesh);
@@ -545,8 +663,6 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   });
 
   // 2. Left Rectangular Slope (hinged at x = -S/2)
-  // At t=1 (open net), extends from x = -S/2 to x = -3S/2 on XZ plane.
-  // At t=0 (closed 3D prism), rotates by -120 deg (-2*PI/3) around Z so its outer edge meets (0, triHeight, z)!
   const leftPivot = new THREE.Group();
   leftPivot.position.set(-S / 2 - explode * 0.7 * (1 - t), yOffset + explode * 0.4 * (1 - t), 0);
   const leftHex = colorful ? '#10b981' : '#0ea5e9';
@@ -554,10 +670,11 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   const leftMesh = decorateMeshWithEdges(
     new THREE.Mesh(
       new THREE.PlaneGeometry(S, L),
-      createSculptMaterial('prism_left', leftHex, { highlighted: leftHighlighted, wireframe: options.wireframe })
+      createSculptMaterial('prism_left', leftHex, { highlighted: leftHighlighted, wireframe: options.wireframe, xrayMode: options.xrayMode })
     ),
     15,
-    leftHighlighted
+    leftHighlighted,
+    options.neonEdges
   );
   leftMesh.rotation.x = Math.PI / 2;
   leftMesh.position.set(-S / 2, 0, 0);
@@ -574,7 +691,6 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   });
 
   // 3. Right Rectangular Slope (hinged at x = +S/2)
-  // At t=0 (closed), rotates by +120 deg (+2*PI/3) around Z so its outer edge meets (0, triHeight, z)!
   const rightPivot = new THREE.Group();
   rightPivot.position.set(S / 2 + explode * 0.7 * (1 - t), yOffset + explode * 0.4 * (1 - t), 0);
   const rightHex = colorful ? '#f97316' : '#0ea5e9';
@@ -582,10 +698,11 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   const rightMesh = decorateMeshWithEdges(
     new THREE.Mesh(
       new THREE.PlaneGeometry(S, L),
-      createSculptMaterial('prism_right', rightHex, { highlighted: rightHighlighted, wireframe: options.wireframe })
+      createSculptMaterial('prism_right', rightHex, { highlighted: rightHighlighted, wireframe: options.wireframe, xrayMode: options.xrayMode })
     ),
     15,
-    rightHighlighted
+    rightHighlighted,
+    options.neonEdges
   );
   rightMesh.rotation.x = Math.PI / 2;
   rightMesh.position.set(S / 2, 0, 0);
@@ -615,15 +732,14 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   const frontTriMesh = decorateMeshWithEdges(
     new THREE.Mesh(
       new THREE.ShapeGeometry(frontTriShape),
-      createSculptMaterial('prism_front_tri', frontHex, { highlighted: frontHighlighted, wireframe: options.wireframe })
+      createSculptMaterial('prism_front_tri', frontHex, { highlighted: frontHighlighted, wireframe: options.wireframe, xrayMode: options.xrayMode })
     ),
     15,
-    frontHighlighted
+    frontHighlighted,
+    options.neonEdges
   );
-  // When frontPivot.rotation.x === 0, we want the triangle lying flat on +Z (from z = L/2 to z = L/2 + triHeight)
   frontTriMesh.rotation.x = Math.PI / 2;
   frontPivot.add(frontTriMesh);
-  // Fold up by -90 deg (-PI/2) so the tip points to +Y when t = 0
   frontPivot.rotation.x = (1 - t) * (-Math.PI / 2);
   root.add(frontPivot);
   registerPart(runtime, frontPivot, frontTriMesh, {
@@ -649,14 +765,14 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   const backTriMesh = decorateMeshWithEdges(
     new THREE.Mesh(
       new THREE.ShapeGeometry(backTriShape),
-      createSculptMaterial('prism_back_tri', backHex, { highlighted: backHighlighted, wireframe: options.wireframe })
+      createSculptMaterial('prism_back_tri', backHex, { highlighted: backHighlighted, wireframe: options.wireframe, xrayMode: options.xrayMode })
     ),
     15,
-    backHighlighted
+    backHighlighted,
+    options.neonEdges
   );
   backTriMesh.rotation.x = Math.PI / 2;
   backPivot.add(backTriMesh);
-  // Fold up by +90 deg (+PI/2) so the tip points to +Y when t = 0
   backPivot.rotation.x = (1 - t) * (Math.PI / 2);
   root.add(backPivot);
   registerPart(runtime, backPivot, backTriMesh, {
@@ -667,6 +783,25 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
     faceIndex: 3,
     normalDir: [0, 0, -1],
   });
+
+  // GSAP X-Ray & Explode visual scaffolding (Guiding rays, glowing vertices)
+  addExplodeVisualAids(
+    root,
+    options,
+    new THREE.Vector3(0, yOffset, 0),
+    null,
+    [
+      new THREE.Vector3(0, yOffset - explode * (1 - t), 0),
+      new THREE.Vector3(-S / 2 - explode * 0.7 * (1 - t) - S / 4, yOffset + explode * 0.4 * (1 - t) + triHeight / 4, 0),
+      new THREE.Vector3(S / 2 + explode * 0.7 * (1 - t) + S / 4, yOffset + explode * 0.4 * (1 - t) + triHeight / 4, 0),
+      new THREE.Vector3(0, yOffset + triHeight / 3, L / 2 + explode * (1 - t)),
+      new THREE.Vector3(0, yOffset + triHeight / 3, -L / 2 - explode * (1 - t)),
+    ],
+    [
+      [-S / 2, 0, L / 2], [S / 2, 0, L / 2], [0, triHeight, L / 2],
+      [-S / 2, 0, -L / 2], [S / 2, 0, -L / 2], [0, triHeight, -L / 2]
+    ]
+  );
 
   root.userData.sculptRuntime = runtime;
   return root;
@@ -681,7 +816,8 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
   root.name = 'SquarePyramidSculptModel';
 
   const t = THREE.MathUtils.clamp(options.unfoldProgress ?? 0, 0, 1);
-  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * 0.55;
+  const explodeDist = (options.explodeMultiplier ?? 1.25) * 1.0;
+  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * explodeDist;
   const colorful = options.colorfulFaces ?? true;
 
   const runtime: ProceduralModelRuntime = {
@@ -696,8 +832,6 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
   const S = 2.0; // Base square side
   const halfS = S / 2; // 1.0
   const slantH = 2.0; // Slant height of each triangular flap
-  // Dihedral angle from horizontal inside the pyramid: cos(alpha) = halfS / slantH = 0.5 => alpha = 60 deg (PI/3)
-  // From flat outward position (t=1) to closed apex position (t=0), each flap rotates by (PI - alpha) = 120 deg (2*PI/3)
   const foldAngle = Math.PI - Math.acos(halfS / slantH);
   const pyramidHeight = Math.sqrt(slantH * slantH - halfS * halfS); // ~1.732
   const yOffset = (-pyramidHeight / 2.5) * (1 - t);
@@ -710,10 +844,11 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
   const baseMesh = decorateMeshWithEdges(
     new THREE.Mesh(
       new THREE.PlaneGeometry(S, S),
-      createSculptMaterial('pyramid_base', baseHex, { highlighted: baseHighlighted, wireframe: options.wireframe })
+      createSculptMaterial('pyramid_base', baseHex, { highlighted: baseHighlighted, wireframe: options.wireframe, xrayMode: options.xrayMode })
     ),
     15,
-    baseHighlighted
+    baseHighlighted,
+    options.neonEdges
   );
   baseMesh.rotation.x = Math.PI / 2;
   basePivot.add(baseMesh);
@@ -743,10 +878,12 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
       createSculptMaterial('pyramid_front', colorful ? '#3b82f6' : '#0ea5e9', {
         highlighted: frontHighlighted,
         wireframe: options.wireframe,
+        xrayMode: options.xrayMode,
       })
     ),
     15,
-    frontHighlighted
+    frontHighlighted,
+    options.neonEdges
   );
   frontMesh.rotation.x = Math.PI / 2;
   frontPivot.add(frontMesh);
@@ -776,10 +913,12 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
       createSculptMaterial('pyramid_back', colorful ? '#ef4444' : '#0ea5e9', {
         highlighted: backHighlighted,
         wireframe: options.wireframe,
+        xrayMode: options.xrayMode,
       })
     ),
     15,
-    backHighlighted
+    backHighlighted,
+    options.neonEdges
   );
   backMesh.rotation.x = Math.PI / 2;
   backPivot.add(backMesh);
@@ -809,10 +948,12 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
       createSculptMaterial('pyramid_left', colorful ? '#10b981' : '#0ea5e9', {
         highlighted: leftHighlighted,
         wireframe: options.wireframe,
+        xrayMode: options.xrayMode,
       })
     ),
     15,
-    leftHighlighted
+    leftHighlighted,
+    options.neonEdges
   );
   leftMesh.rotation.x = Math.PI / 2;
   leftPivot.add(leftMesh);
@@ -842,10 +983,12 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
       createSculptMaterial('pyramid_right', colorful ? '#f59e0b' : '#0ea5e9', {
         highlighted: rightHighlighted,
         wireframe: options.wireframe,
+        xrayMode: options.xrayMode,
       })
     ),
     15,
-    rightHighlighted
+    rightHighlighted,
+    options.neonEdges
   );
   rightMesh.rotation.x = Math.PI / 2;
   rightPivot.add(rightMesh);
@@ -860,6 +1003,25 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
     normalDir: [0.86, 0.5, 0],
   });
 
+  // GSAP X-Ray & Explode visual scaffolding (Guiding rays, glowing vertices)
+  addExplodeVisualAids(
+    root,
+    options,
+    new THREE.Vector3(0, yOffset, 0),
+    null,
+    [
+      new THREE.Vector3(0, yOffset - explode * (1 - t), 0),
+      new THREE.Vector3(0, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, halfS + explode * 0.7 * (1 - t) + halfS * 0.4),
+      new THREE.Vector3(0, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, -halfS - explode * 0.7 * (1 - t) - halfS * 0.4),
+      new THREE.Vector3(-halfS - explode * 0.7 * (1 - t) - halfS * 0.4, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, 0),
+      new THREE.Vector3(halfS + explode * 0.7 * (1 - t) + halfS * 0.4, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, 0),
+    ],
+    [
+      [-halfS, 0, halfS], [halfS, 0, halfS], [halfS, 0, -halfS], [-halfS, 0, -halfS],
+      [0, pyramidHeight, 0]
+    ]
+  );
+
   root.userData.sculptRuntime = runtime;
   return root;
 }
@@ -873,7 +1035,8 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
   root.name = 'CylinderSculptModel';
 
   const t = THREE.MathUtils.clamp(options.unfoldProgress ?? 0, 0, 1);
-  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * 0.55;
+  const explodeDist = (options.explodeMultiplier ?? 1.25) * 1.0;
+  const explode = THREE.MathUtils.clamp(options.explodeProgress ?? 0, 0, 1) * explodeDist;
   const colorful = options.colorfulFaces ?? true;
 
   const runtime: ProceduralModelRuntime = {
@@ -888,18 +1051,10 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
   const R = 1.05;
   const H = 2.2;
 
-  // We orient the unrolled net on the XZ plane, or upright:
-  // Let's keep consistency with other nets: when t=1, the net lies flat on the XZ plane!
-  // At t=0, the cylinder stands upright along Y (or lies smoothly transitioning).
-  // Specifically, let's transition a root orientation or build the unrolling strip parametric mesh directly!
   const segmentsX = 48;
   const segmentsY = 1;
   const totalWidth = 2 * Math.PI * R;
 
-  // Parametric curved-to-flat lateral surface:
-  // When t = 0: forms a cylinder of radius R around axis, standing upright or laying on XZ.
-  // Let's build the parametric lateral geometry so that at t=0 it is a vertical cylinder centered at (0,0,0),
-  // and as t -> 1, the cylinder tilts to horizontal and unrolls flat onto the XZ plane!
   const tiltAngle = t * (Math.PI / 2); // 0 = vertical cylinder, PI/2 = flat on XZ plane
 
   const orientGroup = new THREE.Group();
@@ -912,15 +1067,13 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
   const latGeom = new THREE.PlaneGeometry(totalWidth, H, segmentsX, segmentsY);
   const posAttr = latGeom.attributes.position;
 
-  // Curvature interpolation: thetaMax goes from PI (full closed circle ±PI) at t=0 to 0.001 (flat sheet) at t=1
   const curlFactor = Math.max(0.0005, 1 - t);
   const effRadius = R / curlFactor;
 
   for (let i = 0; i < posAttr.count; i++) {
-    const xOrig = posAttr.getX(i); // in [-totalWidth/2, +totalWidth/2]
+    const xOrig = posAttr.getX(i);
     const yOrig = posAttr.getY(i);
-    const angle = xOrig / effRadius; // at t=0, angle in [-PI, +PI]
-    // Spine point at xOrig=0 stays at (0, yOrig, R * (1 - t))
+    const angle = xOrig / effRadius;
     const px = effRadius * Math.sin(angle);
     const pz = effRadius * Math.cos(angle) - effRadius + R * (1 - t);
     posAttr.setXYZ(i, px, yOrig, pz);
@@ -932,8 +1085,9 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
   const latMat = createSculptMaterial('cylinder_lateral', latHex, {
     highlighted: latHighlighted,
     wireframe: options.wireframe,
+    xrayMode: options.xrayMode,
   });
-  const latMesh = decorateMeshWithEdges(new THREE.Mesh(latGeom, latMat), 25, latHighlighted);
+  const latMesh = decorateMeshWithEdges(new THREE.Mesh(latGeom, latMat), 25, latHighlighted, options.neonEdges);
   lateralPivot.add(latMesh);
   registerPart(runtime, lateralPivot, latMesh, {
     id: 'cylinder_lateral',
@@ -954,16 +1108,15 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
       createSculptMaterial('cylinder_top', colorful ? '#eab308' : '#0ea5e9', {
         highlighted: topCapHighlighted,
         wireframe: options.wireframe,
+        xrayMode: options.xrayMode,
       })
     ),
     20,
-    topCapHighlighted
+    topCapHighlighted,
+    options.neonEdges
   );
-  // Shift circle so its hinge is at the attachment point (y = +R in local XY plane)
   topCapMesh.position.set(0, R, 0);
   topCapPivot.add(topCapMesh);
-  // At t=0, fold -90 deg (-PI/2) so (0, +R, 0) rotates to (0, 0, -R), centering cap at z = R - R = 0!
-  // At t=1, rotation.x = 0 so it lies coplanar with the unrolled rectangle!
   topCapPivot.rotation.x = (1 - t) * (-Math.PI / 2);
   orientGroup.add(topCapPivot);
   registerPart(runtime, topCapPivot, topCapMesh, {
@@ -985,14 +1138,15 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
       createSculptMaterial('cylinder_bottom', colorful ? '#a855f7' : '#0ea5e9', {
         highlighted: bottomCapHighlighted,
         wireframe: options.wireframe,
+        xrayMode: options.xrayMode,
       })
     ),
     20,
-    bottomCapHighlighted
+    bottomCapHighlighted,
+    options.neonEdges
   );
   bottomCapMesh.position.set(0, -R, 0);
   bottomCapPivot.add(bottomCapMesh);
-  // At t=0, fold +90 deg (+PI/2) so (0, -R, 0) rotates to (0, 0, -R), centering cap at z = R - R = 0!
   bottomCapPivot.rotation.x = (1 - t) * (Math.PI / 2);
   orientGroup.add(bottomCapPivot);
   registerPart(runtime, bottomCapPivot, bottomCapMesh, {
@@ -1003,6 +1157,21 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
     faceIndex: 3,
     normalDir: [0, -1, 0],
   });
+
+  // GSAP X-Ray & Explode visual scaffolding
+  addExplodeVisualAids(
+    root,
+    options,
+    new THREE.Vector3(0, 0, 0),
+    new THREE.CylinderGeometry(R, R, H, 24),
+    [
+      new THREE.Vector3(0, H / 2 + explode * (1 - t) + R / 2, 0),
+      new THREE.Vector3(0, -H / 2 - explode * (1 - t) - R / 2, 0),
+    ],
+    [
+      [0, H / 2, 0], [0, -H / 2, 0]
+    ]
+  );
 
   root.userData.sculptRuntime = runtime;
   return root;

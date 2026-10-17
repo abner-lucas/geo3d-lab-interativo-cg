@@ -2,11 +2,14 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import * as THREE from 'three';
+import gsap from 'gsap';
+import { isReducedMotionActive, SPRING_TOUCH, SPRING_MODAL } from '@/lib/motionUtils';
 import { SolidType } from '@/types/geo3d';
 import { 
   createSolidSculptModel, 
-  createHouseCompositeSculptModel,
+  createHouseCompositeSculptModel, 
   createGeo3DLookDevLights, 
   configureGeo3DRenderer, 
   createGeo3DEnvironment,
@@ -51,6 +54,10 @@ export interface GeoCanvasProps {
   onHoverPart?: (part: SculptPartMetadata | null) => void;
   isPopupChild?: boolean;
   onClosePopup?: () => void;
+  xrayMode?: boolean;
+  neonEdges?: boolean;
+  glowingVertices?: boolean;
+  showGuidingRays?: boolean;
 }
 
 function checkWebGLSupport(): boolean {
@@ -81,6 +88,10 @@ export function GeoCanvas({
   onHoverPart,
   isPopupChild = false,
   onClosePopup,
+  xrayMode = false,
+  neonEdges = false,
+  glowingVertices = false,
+  showGuidingRays = true,
 }: GeoCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [webglSupported] = useState<boolean>(() => checkWebGLSupport());
@@ -127,6 +138,8 @@ export function GeoCanvas({
   const isDraggingRef = useRef<boolean>(false);
   const prevMousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const rotationEulerRef = useRef<THREE.Euler>(new THREE.Euler(0.38, 0.58, 0));
+  const targetRotationEulerRef = useRef<THREE.Euler>(new THREE.Euler(0.38, 0.58, 0));
+  const targetCameraPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 3.2, 7.8));
   const autoRotateRef = useRef<boolean>(autoRotateInit);
 
   // Raycaster
@@ -185,6 +198,10 @@ export function GeoCanvas({
         colorfulFaces: colorful,
         highlightPartId: activeHighlight,
         showVertices: true,
+        xrayMode,
+        neonEdges,
+        glowingVertices,
+        showGuidingRays,
       });
     }
 
@@ -240,11 +257,27 @@ export function GeoCanvas({
 
       const isReducedMotion = typeof document !== 'undefined' && document.body.classList.contains('reduced-motion');
       if (autoRotateRef.current && !isReducedMotion && modelGroup) {
-        rotationEulerRef.current.y += 0.007;
+        targetRotationEulerRef.current.y += 0.007;
       }
 
       if (modelGroup) {
+        if (isReducedMotion) {
+          rotationEulerRef.current.copy(targetRotationEulerRef.current);
+        } else {
+          rotationEulerRef.current.x += (targetRotationEulerRef.current.x - rotationEulerRef.current.x) * 0.16;
+          rotationEulerRef.current.y += (targetRotationEulerRef.current.y - rotationEulerRef.current.y) * 0.16;
+          rotationEulerRef.current.z += (targetRotationEulerRef.current.z - rotationEulerRef.current.z) * 0.16;
+        }
         modelGroup.rotation.copy(rotationEulerRef.current);
+      }
+
+      // Smooth camera position damping (lerp)
+      if (cameraRef.current) {
+        if (isReducedMotion) {
+          cameraRef.current.position.copy(targetCameraPosRef.current);
+        } else {
+          cameraRef.current.position.lerp(targetCameraPosRef.current, 0.14);
+        }
       }
 
       renderer.render(scene, camera);
@@ -284,7 +317,7 @@ export function GeoCanvas({
     if (modelGroupRef.current) {
       buildCurrentModel(modelGroupRef.current, currentUnfold, currentExplode, useFaceColors, highlightPartId);
     }
-  }, [solidType, compositeModel, currentUnfold, currentExplode, useFaceColors, highlightPartId]);
+  }, [solidType, compositeModel, currentUnfold, currentExplode, useFaceColors, highlightPartId, xrayMode, neonEdges, glowingVertices, showGuidingRays]);
 
   // Unfolding animation step loop
   useEffect(() => {
@@ -322,39 +355,35 @@ export function GeoCanvas({
     return () => cancelAnimationFrame(handle);
   }, [isAnimatingUnfold, unfoldDirection]);
 
-  // Explode animation step loop
-  useEffect(() => {
-    if (!isAnimatingExplode) return;
+  // GSAP Exploded View Tween Driver
+  const explodeTweenRef = useRef<gsap.core.Tween | null>(null);
 
-    let startTime: number | null = null;
-    const duration = 700;
-    const startVal = currentExplodeRef.current;
-    const targetVal = startVal < 0.5 ? 1 : 0;
+  const triggerGsapExplode = (targetVal: number, duration = 0.95) => {
+    if (isReducedMotionActive()) {
+      setInternalExplode(targetVal);
+      if (onExplodeChangeRef.current) onExplodeChangeRef.current(targetVal);
+      setIsAnimatingExplode(false);
+      return;
+    }
 
-    const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = progress < 0.5 
-        ? 2 * progress * progress 
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    if (explodeTweenRef.current) {
+      explodeTweenRef.current.kill();
+    }
 
-      const nextVal = startVal + (targetVal - startVal) * eased;
-      setInternalExplode(nextVal);
-      if (onExplodeChangeRef.current) onExplodeChangeRef.current(nextVal);
-
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      } else {
+    const animObj = { val: currentExplodeRef.current };
+    explodeTweenRef.current = gsap.to(animObj, {
+      val: targetVal,
+      duration,
+      ease: targetVal > 0.5 ? 'power3.out' : 'power2.inOut',
+      onUpdate: () => {
+        setInternalExplode(animObj.val);
+        if (onExplodeChangeRef.current) onExplodeChangeRef.current(animObj.val);
+      },
+      onComplete: () => {
         setIsAnimatingExplode(false);
-        setInternalExplode(targetVal);
-        if (onExplodeChangeRef.current) onExplodeChangeRef.current(targetVal);
       }
-    };
-
-    const handle = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(handle);
-  }, [isAnimatingExplode]);
+    });
+  };
 
   // Raycasting for interactive face inspection
   const handlePointerRaycast = (clientX: number, clientY: number) => {
@@ -391,9 +420,9 @@ export function GeoCanvas({
       const deltaX = e.clientX - prevMousePosRef.current.x;
       const deltaY = e.clientY - prevMousePosRef.current.y;
 
-      rotationEulerRef.current.y += deltaX * 0.01;
-      rotationEulerRef.current.x += deltaY * 0.01;
-      rotationEulerRef.current.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationEulerRef.current.x));
+      targetRotationEulerRef.current.y += deltaX * 0.01;
+      targetRotationEulerRef.current.x += deltaY * 0.01;
+      targetRotationEulerRef.current.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, targetRotationEulerRef.current.x));
 
       prevMousePosRef.current = { x: e.clientX, y: e.clientY };
     } else {
@@ -407,24 +436,21 @@ export function GeoCanvas({
 
   // Directional button controls
   const rotateStep = (dx: number, dy: number) => {
-    rotationEulerRef.current.x += dy * 0.25;
-    rotationEulerRef.current.y += dx * 0.25;
-    rotationEulerRef.current.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, rotationEulerRef.current.x));
+    targetRotationEulerRef.current.x += dy * 0.28;
+    targetRotationEulerRef.current.y += dx * 0.28;
+    targetRotationEulerRef.current.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, targetRotationEulerRef.current.x));
   };
 
   const zoomCamera = (delta: number) => {
-    if (!cameraRef.current) return;
-    const newZ = cameraRef.current.position.z + delta;
+    const newZ = targetCameraPosRef.current.z + delta;
     if (newZ >= 4 && newZ <= 15) {
-      cameraRef.current.position.z = newZ;
+      targetCameraPosRef.current.z = newZ;
     }
   };
 
   const resetView = () => {
-    rotationEulerRef.current = new THREE.Euler(0.38, 0.58, 0);
-    if (cameraRef.current) {
-      cameraRef.current.position.set(0, 3.2, 7.8);
-    }
+    targetRotationEulerRef.current.set(0.38, 0.58, 0);
+    targetCameraPosRef.current.set(0, 3.2, 7.8);
     setInternalUnfold(0);
     if (onUnfoldChange) onUnfoldChange(0);
     setInternalExplode(0);
@@ -447,6 +473,8 @@ export function GeoCanvas({
   const toggleExploding = () => {
     if (isAnimatingExplode) return;
     setIsAnimatingExplode(true);
+    const willExplode = currentExplode < 0.5;
+    triggerGsapExplode(willExplode ? 1 : 0);
   };
 
   if (!webglSupported) {
@@ -679,75 +707,93 @@ export function GeoCanvas({
       )}
 
       {/* Fullscreen Pop-up Modal Portal */}
-      {isFullscreenPopup && !isPopupChild && isMounted && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Modelo 3D em Tela Cheia (Pop-up)"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsFullscreenPopup(false);
-            }
-          }}
-        >
-          <div className="relative w-full h-full max-w-5xl max-h-[92vh] bg-white rounded-3xl border border-slate-300 shadow-2xl overflow-hidden flex flex-col">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-white shrink-0 select-none">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                  <Box className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 text-sm tracking-tight leading-tight">
-                    Visualização 3D em Tela Cheia
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium leading-tight">
-                    Pop-up interativo ampliado
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsFullscreenPopup(false)}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold text-xs transition cursor-pointer"
-                title="Voltar à visualização acoplada"
-                aria-label="Voltar à visualização acoplada"
+      {isMounted && typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {isFullscreenPopup && !isPopupChild && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Modelo 3D em Tela Cheia (Pop-up)"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setIsFullscreenPopup(false);
+                }
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.94, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.94, y: 10 }}
+                transition={SPRING_MODAL}
+                className="relative w-full h-full max-w-5xl max-h-[92vh] bg-white rounded-3xl border border-slate-300 shadow-2xl overflow-hidden flex flex-col"
               >
-                <Minimize2 className="w-4 h-4 text-slate-700" />
-                <span>Voltar à visualização acoplada</span>
-              </button>
-            </div>
+                {/* Modal Header */}
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-white shrink-0 select-none">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                      <Box className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-900 text-sm tracking-tight leading-tight">
+                        Visualização 3D em Tela Cheia
+                      </h3>
+                      <p className="text-[11px] text-slate-500 font-medium leading-tight">
+                        Pop-up interativo ampliado
+                      </p>
+                    </div>
+                  </div>
 
-            {/* Modal Body with Full-Height 3D Interactive Canvas */}
-            <div className="flex-1 relative w-full h-full min-h-0 bg-slate-50 overflow-hidden">
-              <GeoCanvas
-                solidType={solidType}
-                compositeModel={compositeModel}
-                interactive={true}
-                allowUnfold={allowUnfold}
-                unfoldProgress={currentUnfold}
-                onUnfoldChange={(p) => {
-                  setInternalUnfold(p);
-                  if (onUnfoldChange) onUnfoldChange(p);
-                }}
-                allowExplode={allowExplode}
-                explodeProgress={currentExplode}
-                onExplodeChange={(p) => {
-                  setInternalExplode(p);
-                  if (onExplodeChange) onExplodeChange(p);
-                }}
-                showFaceColors={showFaceColors}
-                autoRotateInit={autoRotate}
-                height="100%"
-                className="h-full w-full rounded-none border-0 shadow-none"
-                isPopupChild={true}
-                onClosePopup={() => setIsFullscreenPopup(false)}
-              />
-            </div>
-          </div>
-        </div>,
+                  <button
+                    type="button"
+                    onClick={() => setIsFullscreenPopup(false)}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold text-xs transition cursor-pointer"
+                    title="Voltar à visualização acoplada"
+                    aria-label="Voltar à visualização acoplada"
+                  >
+                    <Minimize2 className="w-4 h-4 text-slate-700" />
+                    <span>Voltar à visualização acoplada</span>
+                  </button>
+                </div>
+
+                {/* Modal Body with Full-Height 3D Interactive Canvas */}
+                <div className="flex-1 relative w-full h-full min-h-0 bg-slate-50 overflow-hidden">
+                  <GeoCanvas
+                    solidType={solidType}
+                    compositeModel={compositeModel}
+                    interactive={true}
+                    allowUnfold={allowUnfold}
+                    unfoldProgress={currentUnfold}
+                    onUnfoldChange={(p) => {
+                      setInternalUnfold(p);
+                      if (onUnfoldChange) onUnfoldChange(p);
+                    }}
+                    allowExplode={allowExplode}
+                    explodeProgress={currentExplode}
+                    onExplodeChange={(p) => {
+                      setInternalExplode(p);
+                      if (onExplodeChange) onExplodeChange(p);
+                    }}
+                    showFaceColors={showFaceColors}
+                    autoRotateInit={autoRotate}
+                    height="100%"
+                    className="h-full w-full rounded-none border-0 shadow-none"
+                    isPopupChild={true}
+                    onClosePopup={() => setIsFullscreenPopup(false)}
+                    xrayMode={xrayMode}
+                    neonEdges={neonEdges}
+                    glowingVertices={glowingVertices}
+                    showGuidingRays={showGuidingRays}
+                  />
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
         document.body
       )}
     </div>

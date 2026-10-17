@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { SPRING_TOUCH, SPRING_POP, SPRING_MODAL, SPRING_CARD } from '@/lib/motionUtils';
 import { ClassRoom, Student, Attempt, AuditLog } from '@/types/geo3d';
 import { QUESTIONS, QUESTION_BLOCKS } from '@/lib/questions';
 import { 
@@ -1064,176 +1066,205 @@ export function TeacherDashboard({ onBackToHome, onLogout }: TeacherDashboardPro
       {/* ------------------------------------------------------------------- */}
       {/* EDIT STUDENT MODAL */}
       {/* ------------------------------------------------------------------- */}
-      {showEditStudentModal && editingStudent && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <form onSubmit={handleSaveStudentEdit} className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-lg font-black text-slate-900">
-                  Editar Dados do Estudante
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Atualize identificadores, código de acesso e notas pedagógicas
-                </p>
+      <AnimatePresence>
+        {showEditStudentModal && editingStudent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <motion.form
+              onSubmit={handleSaveStudentEdit}
+              initial={{ scale: 0.94, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 12 }}
+              transition={SPRING_MODAL}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    Editar Dados do Estudante
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Atualize identificadores, código de acesso e notas pedagógicas
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Pseudônimo ou Identificador (LGPD)
-              </label>
-              <input
-                type="text"
-                required
-                value={editPseudonym}
-                onChange={(e) => setEditPseudonym(e.target.value)}
-                placeholder="Ex: Estudante 01 (Luiza)"
-                className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-600 outline-hidden"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Código de Acesso
+                  Pseudônimo ou Identificador (LGPD)
                 </label>
                 <input
                   type="text"
                   required
-                  value={editAccessCode}
-                  onChange={(e) => setEditAccessCode(e.target.value.toUpperCase())}
-                  placeholder="Ex: GEO-01-2026"
-                  className="w-full p-3 rounded-xl border border-slate-200 font-mono text-xs font-bold text-blue-700 focus:border-blue-600 outline-hidden uppercase"
+                  value={editPseudonym}
+                  onChange={(e) => setEditPseudonym(e.target.value)}
+                  placeholder="Ex: Estudante 01 (Luiza)"
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-600 outline-hidden"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Código de Acesso
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editAccessCode}
+                    onChange={(e) => setEditAccessCode(e.target.value.toUpperCase())}
+                    placeholder="Ex: GEO-01-2026"
+                    className="w-full p-3 rounded-xl border border-slate-200 font-mono text-xs font-bold text-blue-700 focus:border-blue-600 outline-hidden uppercase"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Nº de Ordem
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editDisplayNumber}
+                    onChange={(e) => setEditDisplayNumber(parseInt(e.target.value) || 1)}
+                    className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-600 outline-hidden"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Nº de Ordem
+                  Observações Pedagógicas
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={editDisplayNumber}
-                  onChange={(e) => setEditDisplayNumber(parseInt(e.target.value) || 1)}
-                  className="w-full p-3 rounded-xl border border-slate-200 text-xs font-bold focus:border-blue-600 outline-hidden"
+                <textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Observações pedagógicas, necessidades de acessibilidade, mediações, etc."
+                  rows={3}
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 resize-none outline-hidden focus:border-blue-600"
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Observações Pedagógicas
-              </label>
-              <textarea
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Observações pedagógicas, necessidades de acessibilidade, mediações, etc."
-                rows={3}
-                className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 resize-none outline-hidden focus:border-blue-600"
-              />
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEditStudentModal(false);
-                  setEditingStudent(null);
-                }}
-                disabled={isUpdatingStudent}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-100 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isUpdatingStudent || !editPseudonym.trim() || !editAccessCode.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                {isUpdatingStudent ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Salvando...</span>
-                  </>
-                ) : (
-                  <span>Salvar Alterações</span>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditStudentModal(false);
+                    setEditingStudent(null);
+                  }}
+                  disabled={isUpdatingStudent}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingStudent || !editPseudonym.trim() || !editAccessCode.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isUpdatingStudent ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Salvando...</span>
+                    </>
+                  ) : (
+                    <span>Salvar Alterações</span>
+                  )}
+                </button>
+              </div>
+            </motion.form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ------------------------------------------------------------------- */}
       {/* DELETE STUDENT CONFIRMATION MODAL */}
       {/* ------------------------------------------------------------------- */}
-      {showDeleteModal && studentToDelete && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-rose-200 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 text-rose-600">
-              <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
+      <AnimatePresence>
+        {showDeleteModal && studentToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 12 }}
+              transition={SPRING_MODAL}
+              className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-rose-200 flex flex-col gap-4"
+            >
+              <div className="flex items-center gap-3 text-rose-600">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Excluir Estudante e Histórico
+                  </h3>
+                  <span className="text-xs text-rose-600 font-semibold">
+                    Ação definitiva e irreversível
+                  </span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Excluir Estudante e Histórico
-                </h3>
-                <span className="text-xs text-rose-600 font-semibold">
-                  Ação definitiva e irreversível
-                </span>
+
+              <div className="p-3.5 bg-rose-50/60 border border-rose-200/80 rounded-2xl text-xs text-slate-700 space-y-2">
+                <p>
+                  Você está prestes a excluir o estudante <strong className="text-slate-900">{studentToDelete.pseudonym}</strong> (Código: <code className="font-mono font-bold text-rose-700">{studentToDelete.accessCode}</code>).
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  Esta operação removerá <strong>em definitivo</strong> todas as relações vinculadas a este estudante:
+                </p>
+                <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
+                  <li>Respostas das 10 questões do Modo Avaliação</li>
+                  <li>Tentativas e histórico do Modo Treino</li>
+                  <li>Notas calculadas e eventuais ajustes de pontuação</li>
+                  <li>Registros de auditoria associados</li>
+                </ul>
               </div>
-            </div>
 
-            <div className="p-3.5 bg-rose-50/60 border border-rose-200/80 rounded-2xl text-xs text-slate-700 space-y-2">
-              <p>
-                Você está prestes a excluir o estudante <strong className="text-slate-900">{studentToDelete.pseudonym}</strong> (Código: <code className="font-mono font-bold text-rose-700">{studentToDelete.accessCode}</code>).
-              </p>
-              <p className="text-[11px] text-slate-600">
-                Esta operação removerá <strong>em definitivo</strong> todas as relações vinculadas a este estudante:
-              </p>
-              <ul className="list-disc list-inside text-[11px] text-slate-600 space-y-0.5">
-                <li>Respostas das 10 questões do Modo Avaliação</li>
-                <li>Tentativas e histórico do Modo Treino</li>
-                <li>Notas calculadas e eventuais ajustes de pontuação</li>
-                <li>Registros de auditoria associados</li>
-              </ul>
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setStudentToDelete(null);
-                }}
-                disabled={isDeletingStudent}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-100 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDeleteStudent}
-                disabled={isDeletingStudent}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                {isDeletingStudent ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Excluindo...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Excluir Definitivamente</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setStudentToDelete(null);
+                  }}
+                  disabled={isDeletingStudent}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteStudent}
+                  disabled={isDeletingStudent}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isDeletingStudent ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Excluindo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Excluir Definitivamente</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

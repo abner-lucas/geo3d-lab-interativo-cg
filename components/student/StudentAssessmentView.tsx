@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Attempt, QuestionDef, Student, AssessmentMode } from '@/types/geo3d';
 import { getQuestionsByMode, QUESTION_BLOCKS } from '@/lib/questions';
 import { QuestionRenderer } from '@/components/assessment/QuestionRenderer';
+import { motion, AnimatePresence } from 'motion/react';
+import { questionSlideVariants, isReducedMotionActive, SPRING_TOUCH, SPRING_POP, SPRING_CARD } from '@/lib/motionUtils';
 import confetti from 'canvas-confetti';
 import { 
   ArrowLeft, 
@@ -51,6 +53,7 @@ export function StudentAssessmentView({
 
   const [attempt, setAttempt] = useState<Attempt>(initialAttempt);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [direction, setDirection] = useState<number>(1);
   const [localAnswers, setLocalAnswers] = useState<Record<number, any>>(() => {
     const existing: Record<number, any> = {};
     if (initialAttempt.responses) {
@@ -131,10 +134,18 @@ export function StudentAssessmentView({
 
         if (!reducedMotion && !document.body.classList.contains('reduced-motion')) {
           try {
+            // Dual synchronized celebratory bursts from left and right
             confetti({
-              particleCount: 120,
-              spread: 70,
-              origin: { y: 0.6 }
+              particleCount: 75,
+              angle: 60,
+              spread: 60,
+              origin: { x: 0.1, y: 0.65 }
+            });
+            confetti({
+              particleCount: 75,
+              angle: 120,
+              spread: 60,
+              origin: { x: 0.9, y: 0.65 }
             });
           } catch {}
         }
@@ -165,26 +176,43 @@ export function StudentAssessmentView({
   if (assessmentFinished) {
     return (
       <div className="w-full max-w-3xl mx-auto py-8 px-4 flex flex-col items-center text-center">
-        <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6 shadow-xs">
+        <motion.div 
+          className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6 shadow-xs"
+          initial={{ scale: 0, rotate: -15 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={SPRING_POP}
+        >
           <CheckCircle2 className="w-12 h-12" />
-        </div>
+        </motion.div>
 
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
-          {isPractice ? <BookOpen className="w-4 h-4" /> : <Award className="w-4 h-4" />}
-          {isPractice ? 'TREINO CONCLUÍDO' : 'AVALIAÇÃO CONCLUÍDA COM SUCESSO'}
-        </span>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex flex-col items-center"
+        >
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-2">
+            {isPractice ? <BookOpen className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+            {isPractice ? 'TREINO CONCLUÍDO' : 'AVALIAÇÃO CONCLUÍDA COM SUCESSO'}
+          </span>
 
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-          Parabéns, {student.pseudonym}!
-        </h1>
-        <p className="text-sm text-slate-600 max-w-lg mb-8">
-          {isPractice
-            ? 'Você concluiu os 3 passos de Treino! Agora você já sabe selecionar alternativas, girar objetos 3D e preencher espaços para realizar o Modo Avaliação.'
-            : 'Todas as suas respostas foram salvas no sistema e enviadas para o professor com sucesso.'}
-        </p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+            Parabéns, {student.pseudonym}!
+          </h1>
+          <p className="text-sm text-slate-600 max-w-lg mb-8">
+            {isPractice
+              ? 'Você concluiu os 3 passos de Treino! Agora você já sabe selecionar alternativas, girar objetos 3D e preencher espaços para realizar o Modo Avaliação.'
+              : 'Todas as suas respostas foram salvas no sistema e enviadas para o professor com sucesso.'}
+          </p>
+        </motion.div>
 
         {/* Results Card */}
-        <div className="w-full p-6 bg-white rounded-2xl border border-slate-200 shadow-xs mb-8 text-left">
+        <motion.div 
+          className="w-full p-6 bg-white rounded-2xl border border-slate-200 shadow-xs mb-8 text-left"
+          initial={{ opacity: 0, scale: 0.96, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.18, ...SPRING_CARD }}
+        >
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
             <div>
               <p className="text-xs text-slate-500 font-bold uppercase">Código do Estudante</p>
@@ -216,14 +244,16 @@ export function StudentAssessmentView({
               ? 'Este resultado é apenas para seu treinamento e não altera sua nota oficial na disciplina.'
               : 'O professor já tem acesso ao seu resultado e às análises de cada sólido no painel.'}
           </p>
-        </div>
+        </motion.div>
 
-        <button
+        <motion.button
           onClick={onExit}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition shadow-xs cursor-pointer"
         >
           Voltar para a Tela Inicial
-        </button>
+        </motion.button>
       </div>
     );
   }
@@ -343,6 +373,16 @@ export function StudentAssessmentView({
           </span>
         </div>
 
+        {/* Animated Smooth Progress Bar */}
+        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+          <motion.div
+            className={`h-full rounded-full ${isPractice ? 'bg-emerald-500' : 'bg-blue-600'}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${(answeredCount / totalQuestionsCount) * 100}%` }}
+            transition={SPRING_TOUCH}
+          />
+        </div>
+
         <div className={`grid gap-1.5 sm:gap-2 ${isPractice ? 'grid-cols-3' : 'grid-cols-10'}`}>
           {activeQuestions.map((q, idx) => {
             const isAnswered = isQuestionAnswered(q.id, localAnswers[q.id]);
@@ -350,9 +390,14 @@ export function StudentAssessmentView({
             const displayStep = idx + 1;
 
             return (
-              <button
+              <motion.button
                 key={q.id}
-                onClick={() => setCurrentQuestionIndex(idx)}
+                onClick={() => {
+                  setDirection(idx >= currentQuestionIndex ? 1 : -1);
+                  setCurrentQuestionIndex(idx);
+                }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
                 className={`py-2 rounded-xl text-xs font-black transition flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                   isCurrent
                     ? isPractice
@@ -368,99 +413,121 @@ export function StudentAssessmentView({
                 {isAnswered && !isCurrent && (
                   <Check className="w-2.5 h-2.5 text-emerald-700" />
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
       {/* ------------------------------------------------------------------- */}
-      {/* ACTIVE QUESTION CONTAINER */}
+      {/* ACTIVE QUESTION CONTAINER WITH DIRECTIONAL SLIDE */}
       {/* ------------------------------------------------------------------- */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-xs flex flex-col gap-6">
-        {/* Question Header & Command */}
-        <div className="flex flex-col gap-2 pb-4 border-b border-slate-100">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
-              isPractice ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'
-            }`}>
-              {isPractice ? currentQ.blockTitle : `${blockInfo.title} • ${currentQ.points.toFixed(2)} pts`}
-            </span>
-            <span className="text-xs font-bold text-slate-500">
-              {isPractice ? `Passo ${currentQuestionIndex + 1} de ${totalQuestionsCount}` : `Questão ${currentQuestionIndex + 1} de ${totalQuestionsCount}`}
-            </span>
+      <AnimatePresence mode="wait" custom={direction}>
+        <motion.div
+          key={currentQ.id}
+          custom={direction}
+          variants={questionSlideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200 shadow-xs flex flex-col gap-6"
+        >
+          {/* Question Header & Command */}
+          <div className="flex flex-col gap-2 pb-4 border-b border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
+                isPractice ? 'text-emerald-700 bg-emerald-50' : 'text-blue-600 bg-blue-50'
+              }`}>
+                {isPractice ? currentQ.blockTitle : `${blockInfo.title} • ${currentQ.points.toFixed(2)} pts`}
+              </span>
+              <span className="text-xs font-bold text-slate-500">
+                {isPractice ? `Passo ${currentQuestionIndex + 1} de ${totalQuestionsCount}` : `Questão ${currentQuestionIndex + 1} de ${totalQuestionsCount}`}
+              </span>
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
+              {currentQ.title}
+            </h2>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full shrink-0 ${isPractice ? 'bg-emerald-600' : 'bg-blue-600'}`} />
+              <p className="text-sm font-semibold text-slate-800">
+                {currentQ.visualPrompt}
+              </p>
+            </div>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-1">
-            {currentQ.title}
-          </h2>
+          {/* Dynamic Question Body */}
+          <QuestionRenderer
+            question={currentQ}
+            currentAnswer={currentAnswer}
+            onAnswerChange={handleAnswerChange}
+            mode={mode}
+          />
 
-          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3">
-            <div className={`w-3 h-3 rounded-full shrink-0 ${isPractice ? 'bg-emerald-600' : 'bg-blue-600'}`} />
-            <p className="text-sm font-semibold text-slate-800">
-              {currentQ.visualPrompt}
-            </p>
+          {/* ----------------------------------------------------------------- */}
+          {/* BOTTOM NAVIGATION ACTIONS */}
+          {/* ----------------------------------------------------------------- */}
+          <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            {/* Previous Button */}
+            <motion.button
+              type="button"
+              disabled={currentQuestionIndex === 0}
+              onClick={() => {
+                setDirection(-1);
+                setCurrentQuestionIndex(prev => Math.max(0, prev - 1));
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 hover:bg-slate-100 font-bold text-sm text-slate-700 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Anterior</span>
+            </motion.button>
+
+            {/* Middle: Review all */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowReviewModal(true)}
+                className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                {isPractice ? 'Ver Passos de Treino' : 'Revisar Todas'}
+              </button>
+            </div>
+
+            {/* Next or Finish Button */}
+            {currentQuestionIndex < totalQuestionsCount - 1 ? (
+              <motion.button
+                type="button"
+                onClick={() => {
+                  setDirection(1);
+                  setCurrentQuestionIndex(prev => Math.min(totalQuestionsCount - 1, prev + 1));
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm transition shadow-xs cursor-pointer ${
+                  isPractice ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                <span>{isPractice ? 'Próximo Passo' : 'Próxima'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            ) : (
+              <motion.button
+                type="button"
+                onClick={() => setShowFinishConfirm(true)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition shadow-xs cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+                <span>{isPractice ? 'CONCLUIR TREINO' : 'FINALIZAR AVALIAÇÃO'}</span>
+              </motion.button>
+            )}
           </div>
-        </div>
-
-        {/* Dynamic Question Body */}
-        <QuestionRenderer
-          question={currentQ}
-          currentAnswer={currentAnswer}
-          onAnswerChange={handleAnswerChange}
-          mode={mode}
-        />
-
-        {/* ----------------------------------------------------------------- */}
-        {/* BOTTOM NAVIGATION ACTIONS */}
-        {/* ----------------------------------------------------------------- */}
-        <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-          {/* Previous Button */}
-          <button
-            type="button"
-            disabled={currentQuestionIndex === 0}
-            onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 hover:bg-slate-100 font-bold text-sm text-slate-700 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Anterior</span>
-          </button>
-
-          {/* Middle: Review all */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setShowReviewModal(true)}
-              className="text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition cursor-pointer"
-            >
-              {isPractice ? 'Ver Passos de Treino' : 'Revisar Todas'}
-            </button>
-          </div>
-
-          {/* Next or Finish Button */}
-          {currentQuestionIndex < totalQuestionsCount - 1 ? (
-            <button
-              type="button"
-              onClick={() => setCurrentQuestionIndex(prev => Math.min(totalQuestionsCount - 1, prev + 1))}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm transition shadow-xs cursor-pointer ${
-                isPractice ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              <span>{isPractice ? 'Próximo Passo' : 'Próxima'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowFinishConfirm(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition shadow-xs cursor-pointer"
-            >
-              <Send className="w-4 h-4" />
-              <span>{isPractice ? 'CONCLUIR TREINO' : 'FINALIZAR AVALIAÇÃO'}</span>
-            </button>
-          )}
-        </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* ------------------------------------------------------------------- */}
       {/* REVIEW QUESTIONS MODAL */}

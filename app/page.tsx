@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Student, Attempt, AssessmentMode } from '@/types/geo3d';
 import { StudentLogin } from '@/components/student/StudentLogin';
 import { StudentAssessmentView } from '@/components/student/StudentAssessmentView';
@@ -151,60 +152,99 @@ export default function HomePage() {
       {/* MAIN VIEW CONTAINER */}
       {/* ------------------------------------------------------------------- */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
-        {/* 1. STUDENT LOGIN */}
-        {activeView === 'STUDENT_LOGIN' && (
-          <div className="py-6 sm:py-12">
-            <StudentLogin
-              onLoginSuccess={handleStudentLoginSuccess}
-              onOpenExploration={() => setActiveView('EXPLORATION')}
-              onOpenTeacher={() => setActiveView('TEACHER_AUTH')}
-            />
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {/* 1. STUDENT LOGIN */}
+          {activeView === 'STUDENT_LOGIN' && (
+            <motion.div 
+              key="STUDENT_LOGIN"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22 }}
+              className="py-6 sm:py-12"
+            >
+              <StudentLogin
+                onLoginSuccess={handleStudentLoginSuccess}
+                onOpenExploration={() => setActiveView('EXPLORATION')}
+                onOpenTeacher={() => setActiveView('TEACHER_AUTH')}
+              />
+            </motion.div>
+          )}
 
-        {/* 2. STUDENT ACTIVE ASSESSMENT / TRAINING */}
-        {activeView === 'STUDENT_ASSESSMENT' && activeStudent && activeAttempt && (
-          <StudentAssessmentView
-            student={activeStudent}
-            initialAttempt={activeAttempt}
-            mode={assessmentMode}
-            onExit={handleExitStudentAssessment}
-            onAttemptChange={setActiveAttempt}
-          />
-        )}
+          {/* 2. STUDENT ACTIVE ASSESSMENT / TRAINING */}
+          {activeView === 'STUDENT_ASSESSMENT' && activeStudent && activeAttempt && (
+            <motion.div 
+              key="STUDENT_ASSESSMENT"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.22 }}
+              className="w-full"
+            >
+              <StudentAssessmentView
+                student={activeStudent}
+                initialAttempt={activeAttempt}
+                mode={assessmentMode}
+                onExit={handleExitStudentAssessment}
+                onAttemptChange={setActiveAttempt}
+              />
+            </motion.div>
+          )}
 
-        {/* 3. 3D EXPLORATION LAB */}
-        {activeView === 'EXPLORATION' && (
-          <div className="py-4">
-            <ExplorationLab />
-          </div>
-        )}
+          {/* 3. 3D EXPLORATION LAB */}
+          {activeView === 'EXPLORATION' && (
+            <motion.div 
+              key="EXPLORATION"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22 }}
+              className="py-4"
+            >
+              <ExplorationLab />
+            </motion.div>
+          )}
 
-        {/* 4. TEACHER AUTHENTICATION */}
-        {activeView === 'TEACHER_AUTH' && (
-          <div className="py-12">
-            <TeacherAuth
-              onSuccess={() => {
-                setIsTeacherAuthenticated(true);
-                setActiveView('TEACHER_DASHBOARD');
-              }}
-              onCancel={() => setActiveView('STUDENT_LOGIN')}
-            />
-          </div>
-        )}
+          {/* 4. TEACHER AUTHENTICATION */}
+          {activeView === 'TEACHER_AUTH' && (
+            <motion.div 
+              key="TEACHER_AUTH"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22 }}
+              className="py-12"
+            >
+              <TeacherAuth
+                onSuccess={() => {
+                  setIsTeacherAuthenticated(true);
+                  setActiveView('TEACHER_DASHBOARD');
+                }}
+                onCancel={() => setActiveView('STUDENT_LOGIN')}
+              />
+            </motion.div>
+          )}
 
-        {/* 5. TEACHER DASHBOARD */}
-        {activeView === 'TEACHER_DASHBOARD' && (
-          <div className="py-4">
-            <TeacherDashboard
-              onBackToHome={() => setActiveView('STUDENT_LOGIN')}
-              onLogout={() => {
-                setIsTeacherAuthenticated(false);
-                setActiveView('STUDENT_LOGIN');
-              }}
-            />
-          </div>
-        )}
+          {/* 5. TEACHER DASHBOARD */}
+          {activeView === 'TEACHER_DASHBOARD' && (
+            <motion.div 
+              key="TEACHER_DASHBOARD"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22 }}
+              className="py-4"
+            >
+              <TeacherDashboard
+                onBackToHome={() => setActiveView('STUDENT_LOGIN')}
+                onLogout={() => {
+                  setIsTeacherAuthenticated(false);
+                  setActiveView('STUDENT_LOGIN');
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* ------------------------------------------------------------------- */}

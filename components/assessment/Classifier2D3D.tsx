@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { SPRING_TOUCH, SPRING_POP } from '@/lib/motionUtils';
 import { Circle, Square, Cylinder, Cone, CheckCircle, RotateCcw } from 'lucide-react';
 
 interface Classifier2D3DProps {
@@ -141,23 +143,32 @@ export function Classifier2D3D({
                 {selectedItem ? 'Clique aqui para colocar a figura em 2D' : 'Arraste ou clique para adicionar figuras 2D aqui'}
               </div>
             ) : (
-              group2DItems.map(item => (
-                <div
-                  key={item.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!readOnly) removeFromGroup(item.id);
-                  }}
-                  className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2 hover:border-rose-300 cursor-pointer transition group"
-                  title="Clique para remover"
-                >
-                  {item.icon}
-                  <span className="font-bold text-xs text-slate-800">{item.name}</span>
-                  {!readOnly && (
-                    <span className="text-[10px] text-slate-400 group-hover:text-rose-500 font-bold ml-1">✕</span>
-                  )}
-                </div>
-              ))
+              <AnimatePresence>
+                {group2DItems.map(item => (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={SPRING_POP}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!readOnly) removeFromGroup(item.id);
+                    }}
+                    className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2 hover:border-rose-300 cursor-pointer transition group"
+                    title="Clique para remover"
+                  >
+                    {item.icon}
+                    <span className="font-bold text-xs text-slate-800">{item.name}</span>
+                    {!readOnly && (
+                      <span className="text-[10px] text-slate-400 group-hover:text-rose-500 font-bold ml-1">✕</span>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             )}
           </div>
         </div>
@@ -198,23 +209,32 @@ export function Classifier2D3D({
                 {selectedItem ? 'Clique aqui para colocar a figura em 3D' : 'Arraste ou clique para adicionar figuras 3D aqui'}
               </div>
             ) : (
-              group3DItems.map(item => (
-                <div
-                  key={item.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!readOnly) removeFromGroup(item.id);
-                  }}
-                  className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2 hover:border-rose-300 cursor-pointer transition group"
-                  title="Clique para remover"
-                >
-                  {item.icon}
-                  <span className="font-bold text-xs text-slate-800">{item.name}</span>
-                  {!readOnly && (
-                    <span className="text-[10px] text-slate-400 group-hover:text-rose-500 font-bold ml-1">✕</span>
-                  )}
-                </div>
-              ))
+              <AnimatePresence>
+                {group3DItems.map(item => (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={SPRING_POP}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!readOnly) removeFromGroup(item.id);
+                    }}
+                    className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-2 hover:border-rose-300 cursor-pointer transition group"
+                    title="Clique para remover"
+                  >
+                    {item.icon}
+                    <span className="font-bold text-xs text-slate-800">{item.name}</span>
+                    {!readOnly && (
+                      <span className="text-[10px] text-slate-400 group-hover:text-rose-500 font-bold ml-1">✕</span>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             )}
           </div>
         </div>
@@ -249,54 +269,63 @@ export function Classifier2D3D({
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {unassignedItems.map(item => {
-                const isSelected = selectedItem === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, item.id)}
-                    onClick={() => setSelectedItem(isSelected ? null : item.id)}
-                    className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer transition select-none ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-50/80 shadow-md scale-105 ring-2 ring-blue-300'
-                        : 'border-slate-200 hover:border-slate-300 bg-slate-50'
-                    }`}
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={isSelected}
-                  >
-                    <div className="p-2 bg-white rounded-lg shadow-xs">
-                      {item.icon}
-                    </div>
-                    <span className="font-bold text-xs text-slate-800">{item.name}</span>
+              <AnimatePresence>
+                {unassignedItems.map(item => {
+                  const isSelected = selectedItem === item.id;
+                  return (
+                    <motion.div
+                      key={item.id}
+                      layout
+                      initial={{ scale: 0.85, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.85, opacity: 0 }}
+                      whileHover={{ scale: 1.04, y: -2 }}
+                      whileTap={{ scale: 0.96 }}
+                      transition={SPRING_TOUCH}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e as any, item.id)}
+                      onClick={() => setSelectedItem(isSelected ? null : item.id)}
+                      className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer transition select-none ${
+                        isSelected
+                          ? 'border-blue-600 bg-blue-50/80 shadow-md ring-2 ring-blue-300'
+                          : 'border-slate-200 hover:border-slate-300 bg-slate-50'
+                      }`}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isSelected}
+                    >
+                      <div className="p-2 bg-white rounded-lg shadow-xs">
+                        {item.icon}
+                      </div>
+                      <span className="font-bold text-xs text-slate-800">{item.name}</span>
 
-                    {/* WCAG Accessible Buttons: Click to assign directly to 2D or 3D */}
-                    <div className="flex items-center gap-1 w-full pt-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          assignGroup(item.id, '2D');
-                        }}
-                        className="flex-1 text-[11px] font-bold py-1 bg-white border border-slate-200 hover:bg-blue-600 hover:text-white rounded-md text-slate-700 transition"
-                      >
-                        2D
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          assignGroup(item.id, '3D');
-                        }}
-                        className="flex-1 text-[11px] font-bold py-1 bg-white border border-slate-200 hover:bg-emerald-600 hover:text-white rounded-md text-slate-700 transition"
-                      >
-                        3D
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                      {/* WCAG Accessible Buttons: Click to assign directly to 2D or 3D */}
+                      <div className="flex items-center gap-1 w-full pt-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            assignGroup(item.id, '2D');
+                          }}
+                          className="flex-1 text-[11px] font-bold py-1 bg-white border border-slate-200 hover:bg-blue-600 hover:text-white rounded-md text-slate-700 transition"
+                        >
+                          2D
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            assignGroup(item.id, '3D');
+                          }}
+                          className="flex-1 text-[11px] font-bold py-1 bg-white border border-slate-200 hover:bg-emerald-600 hover:text-white rounded-md text-slate-700 transition"
+                        >
+                          3D
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           )}
         </div>
