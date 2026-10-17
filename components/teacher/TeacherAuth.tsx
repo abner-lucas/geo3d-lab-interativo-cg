@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Lock, ArrowRight, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
+import { Lock, ArrowRight, ShieldCheck, ArrowLeft, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 interface TeacherAuthProps {
   onSuccess: () => void;
@@ -10,6 +10,7 @@ interface TeacherAuthProps {
 
 export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
   const [passcode, setPasscode] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -61,15 +62,28 @@ export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
                 <KeyRound className="w-4 h-4 text-blue-600" />
               </div>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Digite a senha docente"
                 value={passcode}
                 onChange={(e) => {
                   setPasscode(e.target.value);
                   setError('');
                 }}
-                className="w-full pl-10 pr-3.5 py-3 rounded-xl border-2 border-slate-200 text-slate-900 font-mono text-sm focus:border-blue-600 outline-hidden"
+                className="w-full pl-10 pr-10 py-3 rounded-xl border-2 border-slate-200 text-slate-900 font-mono text-sm focus:border-blue-600 outline-hidden"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition focus:outline-hidden cursor-pointer"
+                title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4 text-slate-500" />
+                ) : (
+                  <Eye className="w-4 h-4 text-slate-500" />
+                )}
+              </button>
             </div>
             {error && <p className="text-xs text-rose-600 font-bold mt-1.5">{error}</p>}
           </div>

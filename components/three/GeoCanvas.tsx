@@ -60,6 +60,7 @@ export interface GeoCanvasProps {
   showGuidingRays?: boolean;
   showVertices?: boolean;
   allowFullscreen?: boolean;
+  allowColorToggle?: boolean;
 }
 
 function checkWebGLSupport(): boolean {
@@ -96,6 +97,7 @@ export function GeoCanvas({
   showGuidingRays = true,
   showVertices = true,
   allowFullscreen = true,
+  allowColorToggle = true,
 }: GeoCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [webglSupported] = useState<boolean>(() => checkWebGLSupport());
@@ -625,7 +627,7 @@ export function GeoCanvas({
               >
                 <ZoomOut className="w-5 h-5" />
               </button>
-              {showFaceColors && (
+              {allowColorToggle && showFaceColors && (
                 <button
                   onClick={() => setUseFaceColors(!useFaceColors)}
                   className={`p-2 rounded-lg transition ${useFaceColors ? 'bg-blue-50 text-blue-600' : 'hover:bg-slate-100 text-slate-600'}`}
@@ -783,6 +785,7 @@ export function GeoCanvas({
                       if (onExplodeChange) onExplodeChange(p);
                     }}
                     showFaceColors={showFaceColors}
+                    allowColorToggle={allowColorToggle}
                     autoRotateInit={autoRotate}
                     height="100%"
                     className="h-full w-full rounded-none border-0 shadow-none"

@@ -682,6 +682,8 @@ export function QuestionRenderer({
               interactive={true} 
               allowUnfold={false} 
               showFaceColors={true} 
+              allowExplode={false}
+              allowColorToggle={false}
             />
           </div>
 
@@ -751,6 +753,8 @@ export function QuestionRenderer({
               interactive={true} 
               allowUnfold={false}
               showFaceColors={false}
+              allowExplode={false}
+              allowColorToggle={false}
             />
           </div>
 

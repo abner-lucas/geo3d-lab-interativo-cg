@@ -110,7 +110,8 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
               height={220}
               interactive={true}
               allowUnfold={false}
-              allowExplode={true}
+              allowExplode={false}
+              allowColorToggle={false}
               autoRotateInit={false}
             />
           </div>
@@ -231,6 +232,7 @@ export function HouseComposer({ initialValue, onChange, readOnly = false }: Hous
                   interactive={true}
                   allowUnfold={false}
                   allowExplode={false}
+                  allowColorToggle={false}
                 />
               </motion.div>
             )}
