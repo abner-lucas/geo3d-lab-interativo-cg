@@ -237,7 +237,10 @@ export default function HomePage() {
             >
               <TeacherDashboard
                 onBackToHome={() => setActiveView('STUDENT_LOGIN')}
-                onLogout={() => {
+                onLogout={async () => {
+                  try {
+                    await fetch('/api/teacher/logout', { method: 'POST' });
+                  } catch {}
                   setIsTeacherAuthenticated(false);
                   setActiveView('STUDENT_LOGIN');
                 }}

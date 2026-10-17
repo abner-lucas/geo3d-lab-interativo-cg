@@ -12,15 +12,37 @@ export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
   const [passcode, setPasscode] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const clean = passcode.trim();
-    // Default passcodes for teacher
-    if (clean === 'PROF-2026' || clean === 'geo3d' || clean === '123456') {
+    if (!clean) {
+      setError('Digite a senha de acesso docente.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError('');
+
+      const res = await fetch('/api/teacher/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode: clean })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Código de acesso docente inválido.');
+        return;
+      }
+
       onSuccess();
-    } else {
-      setError('Código de acesso docente inválido.');
+    } catch {
+      setError('Erro de conexão ao validar o acesso docente.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -90,9 +112,10 @@ export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
 
           <button
             type="submit"
-            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+            disabled={isLoading}
+            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            <span>ENTRAR NO PAINEL</span>
+            <span>{isLoading ? 'Verificando...' : 'ENTRAR NO PAINEL'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>

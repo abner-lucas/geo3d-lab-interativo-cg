@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClassStudents, getClassAttempts, createNewStudent, updateStudent, deleteStudent } from '@/lib/db';
+import { verifyTeacherSession } from '@/lib/serverAuth';
 
 export async function GET(req: NextRequest) {
   try {
+    if (!verifyTeacherSession(req)) {
+      return NextResponse.json({ error: 'Acesso docente não autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const classId = searchParams.get('classId');
 
@@ -21,6 +26,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!verifyTeacherSession(req)) {
+      return NextResponse.json({ error: 'Acesso docente não autorizado' }, { status: 401 });
+    }
+
     const { classId, pseudonym, customCode } = await req.json();
 
     if (!classId || !pseudonym) {
@@ -36,6 +45,10 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    if (!verifyTeacherSession(req)) {
+      return NextResponse.json({ error: 'Acesso docente não autorizado' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { studentId, pseudonym, accessCode, displayNumber, notes } = body;
 
@@ -58,6 +71,10 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    if (!verifyTeacherSession(req)) {
+      return NextResponse.json({ error: 'Acesso docente não autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     let studentId = searchParams.get('studentId');
 
@@ -78,4 +95,3 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

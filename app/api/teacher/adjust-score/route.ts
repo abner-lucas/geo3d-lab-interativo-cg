@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adjustAttemptScore, DEFAULT_TEACHER } from '@/lib/db';
+import { verifyTeacherSession } from '@/lib/serverAuth';
 
 export async function POST(req: NextRequest) {
   try {
+    if (!verifyTeacherSession(req)) {
+      return NextResponse.json({ error: 'Acesso docente não autorizado' }, { status: 401 });
+    }
+
     const { attemptId, newScore, justification } = await req.json();
 
     if (!attemptId || newScore === undefined || !justification) {

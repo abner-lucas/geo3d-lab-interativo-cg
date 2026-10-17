@@ -93,9 +93,9 @@ export const QUESTIONS: QuestionDef[] = [
     points: 1.0,
     type: 'select_single',
     options: [
-      { id: 'square', label: 'Quadrado', is3D: false, shape: 'square' },
-      { id: 'triangle', label: 'Triângulo', is3D: false, shape: 'triangle' },
-      { id: 'cube', label: 'Cubo', is3D: true, shape: 'cube' }
+      { id: 'square', label: 'Quadrado', shape: 'square' },
+      { id: 'triangle', label: 'Triângulo', shape: 'triangle' },
+      { id: 'cube', label: 'Cubo', shape: 'cube' }
     ]
   },
   // QUESTÃO 2 (1.0 pt) — Nível 1: Simples
@@ -184,9 +184,9 @@ export const QUESTIONS: QuestionDef[] = [
     points: 1.0,
     type: 'valid_net',
     options: [
-      { id: 'net_a', name: 'Molde A (Cruz 1-4-1)', isValid: true, description: '4 faces centrais + 1 topo + 1 base em lados opostos' },
-      { id: 'net_b', name: 'Molde B (5 em Linha)', isValid: false, description: '5 faces seguidas na mesma faixa horizontal' },
-      { id: 'net_c', name: 'Molde C (Abas no Mesmo Lado)', isValid: false, description: 'Duas abas colocadas no mesmo lado superior' }
+      { id: 'net_a', name: 'Molde A (Cruz 1-4-1)', description: '4 faces centrais + 1 topo + 1 base em lados opostos' },
+      { id: 'net_b', name: 'Molde B (5 em Linha)', description: '5 faces seguidas na mesma faixa horizontal' },
+      { id: 'net_c', name: 'Molde C (Abas no Mesmo Lado)', description: 'Duas abas colocadas no mesmo lado superior' }
     ]
   },
   // QUESTÃO 8 (0.75 pt) — Nível 4: Avançado (Manipulação 3D e Oclusão)
@@ -215,9 +215,9 @@ export const QUESTIONS: QuestionDef[] = [
     points: 0.75,
     type: 'orthographic_view',
     options: [
-      { id: 'view_a', name: 'Vista A: Retângulo com linha divisória', isCorrect: true },
-      { id: 'view_b', name: 'Vista B: Triângulo simples', isCorrect: false },
-      { id: 'view_c', name: 'Vista C: Círculo simples', isCorrect: false }
+      { id: 'view_a', name: 'Vista A: Retângulo com linha divisória' },
+      { id: 'view_b', name: 'Vista B: Triângulo simples' },
+      { id: 'view_c', name: 'Vista C: Círculo simples' }
     ]
   },
   // QUESTÃO 10 (1.5 pt) — Nível 5: Complexidade Máxima (Composição Construtiva 3D)

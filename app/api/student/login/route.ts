@@ -23,11 +23,26 @@ export async function POST(req: NextRequest) {
 
     const attempt = await getOrCreateStudentAttempt(student, mode || 'EVALUATION');
 
+    // Sanitizar objeto do estudante para não vazar notas pedagógicas confidenciais do professor
+    const sanitizedStudent = {
+      id: student.id,
+      classId: student.classId,
+      pseudonym: student.pseudonym,
+      displayNumber: student.displayNumber,
+      accessCode: student.accessCode
+    };
+
     return NextResponse.json({
       success: true,
-      student,
+      student: sanitizedStudent,
       attempt,
-      classRoom
+      classRoom: classRoom ? {
+        id: classRoom.id,
+        name: classRoom.name,
+        code: classRoom.code,
+        yearPeriod: classRoom.yearPeriod,
+        isAssessmentActive: classRoom.isAssessmentActive
+      } : null
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Erro ao processar login' }, { status: 500 });
