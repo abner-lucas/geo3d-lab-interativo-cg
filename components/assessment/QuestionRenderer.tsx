@@ -367,7 +367,7 @@ export function QuestionRenderer({
             >
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Figura C</span>
               <div className="w-32 h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-                <GeoCanvas solidType="cube" height={128} interactive={false} showFaceColors={false} autoRotateInit={true} />
+                <GeoCanvas solidType="cube" height={128} interactive={false} showFaceColors={false} autoRotateInit={true} allowFullscreen={false} />
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm">Cubo</p>
@@ -424,7 +424,7 @@ export function QuestionRenderer({
                   aria-pressed={isSelected}
                 >
                   <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
+                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} allowFullscreen={false} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
                 </motion.button>
@@ -471,7 +471,7 @@ export function QuestionRenderer({
                   aria-pressed={isSelected}
                 >
                   <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
+                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} allowFullscreen={false} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
                 </motion.button>
@@ -518,7 +518,7 @@ export function QuestionRenderer({
                   aria-pressed={isSelected}
                 >
                   <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
+                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} allowFullscreen={false} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
                 </motion.button>
@@ -570,7 +570,7 @@ export function QuestionRenderer({
                   aria-pressed={isSelected}
                 >
                   <div className="w-full h-36 rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} />
+                    <GeoCanvas solidType={opt.solid} height={144} interactive={false} showFaceColors={false} autoRotateInit={true} allowFullscreen={false} />
                   </div>
                   <span className="font-bold text-sm text-slate-800">{opt.name}</span>
                 </motion.button>

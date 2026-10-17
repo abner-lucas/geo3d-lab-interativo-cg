@@ -59,6 +59,7 @@ export interface GeoCanvasProps {
   glowingVertices?: boolean;
   showGuidingRays?: boolean;
   showVertices?: boolean;
+  allowFullscreen?: boolean;
 }
 
 function checkWebGLSupport(): boolean {
@@ -94,6 +95,7 @@ export function GeoCanvas({
   glowingVertices = false,
   showGuidingRays = true,
   showVertices = true,
+  allowFullscreen = true,
 }: GeoCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [webglSupported] = useState<boolean>(() => checkWebGLSupport());
@@ -532,7 +534,7 @@ export function GeoCanvas({
       </div>
 
       {/* Pop-up Fullscreen Button for Non-interactive Frames */}
-      {!interactive && !isPopupChild && (
+      {!interactive && !isPopupChild && allowFullscreen && (
         <div
           role="button"
           tabIndex={0}
@@ -664,7 +666,7 @@ export function GeoCanvas({
                 >
                   <Minimize2 className="w-5 h-5 text-blue-600" />
                 </button>
-              ) : (
+              ) : allowFullscreen ? (
                 <button
                   type="button"
                   onClick={() => setIsFullscreenPopup(true)}
@@ -674,7 +676,7 @@ export function GeoCanvas({
                 >
                   <Maximize2 className="w-5 h-5" />
                 </button>
-              )}
+              ) : null}
             </div>
 
             {/* Right Action: Open / Close Fold Animation */}
