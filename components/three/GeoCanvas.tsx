@@ -58,6 +58,7 @@ export interface GeoCanvasProps {
   neonEdges?: boolean;
   glowingVertices?: boolean;
   showGuidingRays?: boolean;
+  showVertices?: boolean;
 }
 
 function checkWebGLSupport(): boolean {
@@ -92,6 +93,7 @@ export function GeoCanvas({
   neonEdges = false,
   glowingVertices = false,
   showGuidingRays = true,
+  showVertices = true,
 }: GeoCanvasProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [webglSupported] = useState<boolean>(() => checkWebGLSupport());
@@ -197,7 +199,7 @@ export function GeoCanvas({
         explodeProgress: explodeT,
         colorfulFaces: colorful,
         highlightPartId: activeHighlight,
-        showVertices: true,
+        showVertices,
         xrayMode,
         neonEdges,
         glowingVertices,
@@ -317,7 +319,7 @@ export function GeoCanvas({
     if (modelGroupRef.current) {
       buildCurrentModel(modelGroupRef.current, currentUnfold, currentExplode, useFaceColors, highlightPartId);
     }
-  }, [solidType, compositeModel, currentUnfold, currentExplode, useFaceColors, highlightPartId, xrayMode, neonEdges, glowingVertices, showGuidingRays]);
+  }, [solidType, compositeModel, currentUnfold, currentExplode, useFaceColors, highlightPartId, xrayMode, neonEdges, glowingVertices, showGuidingRays, showVertices]);
 
   // Unfolding animation step loop
   useEffect(() => {
@@ -788,6 +790,7 @@ export function GeoCanvas({
                     neonEdges={neonEdges}
                     glowingVertices={glowingVertices}
                     showGuidingRays={showGuidingRays}
+                    showVertices={showVertices}
                   />
                 </div>
               </motion.div>

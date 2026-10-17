@@ -234,8 +234,16 @@ function addExplodeVisualAids(
       opacity: Math.min(0.48, explode * 0.55),
       depthWrite: false,
     });
-    const ghost = new THREE.LineSegments(new THREE.EdgesGeometry(ghostGeometry), ghostMat);
-    ghost.position.copy(center);
+    const isWireframeLines = Boolean(ghostGeometry.userData?.isWireframeLines);
+    const linesGeom = isWireframeLines
+      ? ghostGeometry
+      : new THREE.EdgesGeometry(ghostGeometry);
+    const ghost = new THREE.LineSegments(linesGeom, ghostMat);
+    if (isWireframeLines) {
+      ghost.position.set(0, 0, 0);
+    } else {
+      ghost.position.copy(center);
+    }
     ghost.name = 'ghost_wireframe';
     root.add(ghost);
   }
@@ -265,11 +273,12 @@ function addExplodeVisualAids(
   }
 
   // 3. Glowing Corner Vertices (Vértices nos cantos do sólido)
-  if ((options.showVertices ?? false) || (options.glowingVertices ?? false)) {
+  // Vertex positions are provided in absolute 3D space [vx, vy, vz]
+  if (((options.showVertices ?? false) || (options.glowingVertices ?? false)) && vertexPositions.length > 0) {
     const vGroup = new THREE.Group();
     vGroup.name = 'vertices_markers';
     const isGlowing = options.glowingVertices ?? false;
-    const vRadius = isGlowing ? 0.12 : 0.085;
+    const vRadius = isGlowing ? 0.11 : 0.08;
     const vGeom = new THREE.SphereGeometry(vRadius, 16, 16);
     const vMat = new THREE.MeshStandardMaterial({
       color: isGlowing ? 0x9333ea : 0x7c3aed,
@@ -281,7 +290,7 @@ function addExplodeVisualAids(
 
     vertexPositions.forEach(([vx, vy, vz]) => {
       const sp = new THREE.Mesh(vGeom, vMat);
-      sp.position.set(vx + center.x, vy + center.y, vz + center.z);
+      sp.position.set(vx, vy, vz);
       vGroup.add(sp);
     });
     root.add(vGroup);
@@ -439,19 +448,19 @@ export function createCubeSculptModel(options: ProceduralModelOptions = {}): THR
   addExplodeVisualAids(
     root,
     options,
-    new THREE.Vector3(0, yCenterOffset, 0),
+    new THREE.Vector3(0, 0, 0),
     new THREE.BoxGeometry(S, S, S),
     [
-      new THREE.Vector3(0, yCenterOffset - explode * (1 - t), 0),
-      new THREE.Vector3(0, yCenterOffset, H + explode * (1 - t) + H / 2),
-      new THREE.Vector3(0, yCenterOffset, -H - explode * (1 - t) - H / 2),
-      new THREE.Vector3(0, yCenterOffset + explode * (1 - t) + H, 0),
-      new THREE.Vector3(-H - explode * (1 - t) - H / 2, yCenterOffset, 0),
-      new THREE.Vector3(H + explode * (1 - t) + H / 2, yCenterOffset, 0),
+      new THREE.Vector3(0, -H - explode * (1 - t), 0),
+      new THREE.Vector3(0, H + explode * (1 - t), 0),
+      new THREE.Vector3(0, 0, H + explode * (1 - t)),
+      new THREE.Vector3(0, 0, -H - explode * (1 - t)),
+      new THREE.Vector3(-H - explode * (1 - t), 0, 0),
+      new THREE.Vector3(H + explode * (1 - t), 0, 0),
     ],
     [
-      [-H, -H, -H], [H, -H, -H], [H, H, -H], [-H, H, -H],
-      [-H, -H, H], [H, -H, H], [H, H, H], [-H, H, H]
+      [-H,  H,  H], [ H,  H,  H], [ H,  H, -H], [-H,  H, -H],
+      [-H, -H,  H], [ H, -H,  H], [ H, -H, -H], [-H, -H, -H]
     ]
   );
 
@@ -588,19 +597,19 @@ export function createCuboidSculptModel(options: ProceduralModelOptions = {}): T
   addExplodeVisualAids(
     root,
     options,
-    new THREE.Vector3(0, yOffset, 0),
+    new THREE.Vector3(0, 0, 0),
     new THREE.BoxGeometry(W, H, D),
     [
-      new THREE.Vector3(0, yOffset - explode * (1 - t), 0),
-      new THREE.Vector3(0, yOffset, D / 2 + explode * (1 - t) + H / 2),
-      new THREE.Vector3(0, yOffset, -D / 2 - explode * (1 - t) - H / 2),
-      new THREE.Vector3(0, yOffset + explode * (1 - t) + H, 0),
-      new THREE.Vector3(-W / 2 - explode * (1 - t) - H / 2, yOffset, 0),
-      new THREE.Vector3(W / 2 + explode * (1 - t) + H / 2, yOffset, 0),
+      new THREE.Vector3(0, -H / 2 - explode * (1 - t), 0),
+      new THREE.Vector3(0, H / 2 + explode * (1 - t), 0),
+      new THREE.Vector3(0, 0, D / 2 + explode * (1 - t)),
+      new THREE.Vector3(0, 0, -D / 2 - explode * (1 - t)),
+      new THREE.Vector3(-W / 2 - explode * (1 - t), 0, 0),
+      new THREE.Vector3(W / 2 + explode * (1 - t), 0, 0),
     ],
     [
-      [-W / 2, -H / 2, -D / 2], [W / 2, -H / 2, -D / 2], [W / 2, H / 2, -D / 2], [-W / 2, H / 2, -D / 2],
-      [-W / 2, -H / 2, D / 2], [W / 2, -H / 2, D / 2], [W / 2, H / 2, D / 2], [-W / 2, H / 2, D / 2]
+      [-W / 2,  H / 2,  D / 2], [ W / 2,  H / 2,  D / 2], [ W / 2,  H / 2, -D / 2], [-W / 2,  H / 2, -D / 2],
+      [-W / 2, -H / 2,  D / 2], [ W / 2, -H / 2,  D / 2], [ W / 2, -H / 2, -D / 2], [-W / 2, -H / 2, -D / 2]
     ]
   );
 
@@ -785,21 +794,40 @@ export function createTriangularPrismSculptModel(options: ProceduralModelOptions
   });
 
   // GSAP X-Ray & Explode visual scaffolding (Guiding rays, glowing vertices)
+  const prismGhostGeom = new THREE.BufferGeometry();
+  const prismEdgePts: THREE.Vector3[] = [
+    new THREE.Vector3(-S / 2, -triHeight / 3, L / 2), new THREE.Vector3(S / 2, -triHeight / 3, L / 2),
+    new THREE.Vector3(S / 2, -triHeight / 3, L / 2), new THREE.Vector3(0, 2 * triHeight / 3, L / 2),
+    new THREE.Vector3(0, 2 * triHeight / 3, L / 2), new THREE.Vector3(-S / 2, -triHeight / 3, L / 2),
+    new THREE.Vector3(-S / 2, -triHeight / 3, -L / 2), new THREE.Vector3(S / 2, -triHeight / 3, -L / 2),
+    new THREE.Vector3(S / 2, -triHeight / 3, -L / 2), new THREE.Vector3(0, 2 * triHeight / 3, -L / 2),
+    new THREE.Vector3(0, 2 * triHeight / 3, -L / 2), new THREE.Vector3(-S / 2, -triHeight / 3, -L / 2),
+    new THREE.Vector3(-S / 2, -triHeight / 3, L / 2), new THREE.Vector3(-S / 2, -triHeight / 3, -L / 2),
+    new THREE.Vector3(S / 2, -triHeight / 3, L / 2), new THREE.Vector3(S / 2, -triHeight / 3, -L / 2),
+    new THREE.Vector3(0, 2 * triHeight / 3, L / 2), new THREE.Vector3(0, 2 * triHeight / 3, -L / 2),
+  ];
+  prismGhostGeom.setFromPoints(prismEdgePts);
+  prismGhostGeom.userData.isWireframeLines = true;
+
   addExplodeVisualAids(
     root,
     options,
-    new THREE.Vector3(0, yOffset, 0),
-    null,
+    new THREE.Vector3(0, 0, 0),
+    prismGhostGeom,
     [
-      new THREE.Vector3(0, yOffset - explode * (1 - t), 0),
-      new THREE.Vector3(-S / 2 - explode * 0.7 * (1 - t) - S / 4, yOffset + explode * 0.4 * (1 - t) + triHeight / 4, 0),
-      new THREE.Vector3(S / 2 + explode * 0.7 * (1 - t) + S / 4, yOffset + explode * 0.4 * (1 - t) + triHeight / 4, 0),
-      new THREE.Vector3(0, yOffset + triHeight / 3, L / 2 + explode * (1 - t)),
-      new THREE.Vector3(0, yOffset + triHeight / 3, -L / 2 - explode * (1 - t)),
+      new THREE.Vector3(0, -triHeight / 3 - explode * (1 - t), 0),
+      new THREE.Vector3(-S / 4 - explode * 0.7 * (1 - t), triHeight / 6 + explode * 0.4 * (1 - t), 0),
+      new THREE.Vector3(S / 4 + explode * 0.7 * (1 - t), triHeight / 6 + explode * 0.4 * (1 - t), 0),
+      new THREE.Vector3(0, 0, L / 2 + explode * (1 - t)),
+      new THREE.Vector3(0, 0, -L / 2 - explode * (1 - t)),
     ],
     [
-      [-S / 2, 0, L / 2], [S / 2, 0, L / 2], [0, triHeight, L / 2],
-      [-S / 2, 0, -L / 2], [S / 2, 0, -L / 2], [0, triHeight, -L / 2]
+      [-S / 2, -triHeight / 3,  L / 2],
+      [ S / 2, -triHeight / 3,  L / 2],
+      [ 0,      2 * triHeight / 3, L / 2],
+      [-S / 2, -triHeight / 3, -L / 2],
+      [ S / 2, -triHeight / 3, -L / 2],
+      [ 0,      2 * triHeight / 3, -L / 2]
     ]
   );
 
@@ -1004,21 +1032,40 @@ export function createSquarePyramidSculptModel(options: ProceduralModelOptions =
   });
 
   // GSAP X-Ray & Explode visual scaffolding (Guiding rays, glowing vertices)
+  const pyramidGhostGeom = new THREE.BufferGeometry();
+  const pyramidEdgePts: THREE.Vector3[] = [
+    // 4 base edges:
+    new THREE.Vector3(-halfS, yOffset, halfS), new THREE.Vector3(halfS, yOffset, halfS),
+    new THREE.Vector3(halfS, yOffset, halfS), new THREE.Vector3(halfS, yOffset, -halfS),
+    new THREE.Vector3(halfS, yOffset, -halfS), new THREE.Vector3(-halfS, yOffset, -halfS),
+    new THREE.Vector3(-halfS, yOffset, -halfS), new THREE.Vector3(-halfS, yOffset, halfS),
+    // 4 slant edges to apex:
+    new THREE.Vector3(-halfS, yOffset, halfS), new THREE.Vector3(0, yOffset + pyramidHeight, 0),
+    new THREE.Vector3(halfS, yOffset, halfS), new THREE.Vector3(0, yOffset + pyramidHeight, 0),
+    new THREE.Vector3(halfS, yOffset, -halfS), new THREE.Vector3(0, yOffset + pyramidHeight, 0),
+    new THREE.Vector3(-halfS, yOffset, -halfS), new THREE.Vector3(0, yOffset + pyramidHeight, 0),
+  ];
+  pyramidGhostGeom.setFromPoints(pyramidEdgePts);
+  pyramidGhostGeom.userData.isWireframeLines = true;
+
   addExplodeVisualAids(
     root,
     options,
-    new THREE.Vector3(0, yOffset, 0),
-    null,
+    new THREE.Vector3(0, yOffset + pyramidHeight * 0.25, 0),
+    pyramidGhostGeom,
     [
       new THREE.Vector3(0, yOffset - explode * (1 - t), 0),
-      new THREE.Vector3(0, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, halfS + explode * 0.7 * (1 - t) + halfS * 0.4),
-      new THREE.Vector3(0, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, -halfS - explode * 0.7 * (1 - t) - halfS * 0.4),
-      new THREE.Vector3(-halfS - explode * 0.7 * (1 - t) - halfS * 0.4, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, 0),
-      new THREE.Vector3(halfS + explode * 0.7 * (1 - t) + halfS * 0.4, yOffset + explode * 0.3 * (1 - t) + slantH * 0.3, 0),
+      new THREE.Vector3(0, yOffset + pyramidHeight / 3 + explode * 0.3 * (1 - t), halfS * 0.5 + explode * 0.7 * (1 - t)),
+      new THREE.Vector3(0, yOffset + pyramidHeight / 3 + explode * 0.3 * (1 - t), -halfS * 0.5 - explode * 0.7 * (1 - t)),
+      new THREE.Vector3(-halfS * 0.5 - explode * 0.7 * (1 - t), yOffset + pyramidHeight / 3 + explode * 0.3 * (1 - t), 0),
+      new THREE.Vector3(halfS * 0.5 + explode * 0.7 * (1 - t), yOffset + pyramidHeight / 3 + explode * 0.3 * (1 - t), 0),
     ],
     [
-      [-halfS, 0, halfS], [halfS, 0, halfS], [halfS, 0, -halfS], [-halfS, 0, -halfS],
-      [0, pyramidHeight, 0]
+      [-halfS, yOffset,  halfS],
+      [ halfS, yOffset,  halfS],
+      [ halfS, yOffset, -halfS],
+      [-halfS, yOffset, -halfS],
+      [0,      yOffset + pyramidHeight, 0]
     ]
   );
 
@@ -1168,9 +1215,7 @@ export function createCylinderSculptModel(options: ProceduralModelOptions = {}):
       new THREE.Vector3(0, H / 2 + explode * (1 - t) + R / 2, 0),
       new THREE.Vector3(0, -H / 2 - explode * (1 - t) - R / 2, 0),
     ],
-    [
-      [0, H / 2, 0], [0, -H / 2, 0]
-    ]
+    [] // Cilindro é corpo redondo e possui 0 vértices (sem pontas)
   );
 
   root.userData.sculptRuntime = runtime;
