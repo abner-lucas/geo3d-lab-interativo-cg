@@ -16,6 +16,17 @@
   outline-offset: 3px !important;
 }
 
+/* Form controls handle focus state cleanly via their border/ring, avoiding duplicate double lines */
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
+}
+
 /* Reduced Motion Mode Support */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

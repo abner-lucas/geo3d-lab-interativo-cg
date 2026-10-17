@@ -69,12 +69,12 @@ export function TeacherAuth({ onSuccess, onCancel }: TeacherAuthProps) {
                   setPasscode(e.target.value);
                   setError('');
                 }}
-                className="w-full pl-10 pr-10 py-3 rounded-xl border-2 border-slate-200 text-slate-900 font-mono text-sm focus:border-blue-600 outline-hidden"
+                className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 text-slate-900 font-mono text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition focus:outline-hidden cursor-pointer"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition focus:outline-none cursor-pointer"
                 title={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                 aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
               >
